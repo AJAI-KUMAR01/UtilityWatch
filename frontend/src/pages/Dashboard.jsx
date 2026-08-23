@@ -10,6 +10,7 @@ import AnomalyPanel from '../components/AnomalyPanel';
 import AIRecommendations from '../components/AIRecommendations';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
+import logoUrl from '../assets/logo.svg';
 import {
   fetchConsumption, fetchAnomalies, fetchCost, fetchForecast
 } from '../api/client';
@@ -33,10 +34,10 @@ function SectionCard({ id, title, icon: Icon, children, className = '', accentCo
   return (
     <div
       id={id}
-      className={`relative rounded-2xl bg-navy-800/50 backdrop-blur-sm border border-slate-800/60 overflow-hidden ${className}`}
+      className={`relative rounded-2xl bg-navy-800/50 backdrop-blur-md border border-slate-800/60 overflow-hidden shadow-xl shadow-black/20 hover:border-slate-700/60 hover:shadow-black/40 transition-all duration-300 ${className}`}
     >
       {/* Gradient top edge */}
-      <div className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r ${accent[accentColor]} to-transparent`} />
+      <div className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r ${accent[accentColor]} to-transparent opacity-50`} />
 
       <div className="p-5">
         <div className="flex items-center gap-3 mb-5">
@@ -136,13 +137,14 @@ export default function Dashboard() {
       <header className="relative z-10 border-b border-slate-800/60 bg-navy-900/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-gradient-to-br from-cyan-400 to-cyan-600 shadow-lg shadow-cyan-500/30">
-                <Activity className="h-5 w-5 text-white" />
+            <div className="flex items-center gap-4">
+              <div className="flex items-center justify-center h-10 w-10 relative">
+                <div className="absolute inset-0 bg-cyan-400/20 blur-md rounded-full" />
+                <img src={logoUrl} alt="UtilityWatch" className="h-full w-full object-contain relative z-10 drop-shadow-md" />
               </div>
               <div>
-                <h1 className="text-base font-bold text-white tracking-tight">UtilityWatch</h1>
-                <p className="text-[10px] text-slate-500 tracking-wider uppercase">Smart Consumption Analyzer</p>
+                <h1 className="text-lg font-bold text-white tracking-tight leading-tight">UtilityWatch</h1>
+                <p className="text-[10px] text-slate-400 tracking-widest uppercase font-medium">Smart Analyzer</p>
               </div>
             </div>
 

@@ -169,10 +169,12 @@ def _parse_response(raw_text: str) -> dict:
     # Strip chain-of-thought <think>...</think> blocks (e.g. from Qwen models)
     raw_text = re.sub(r"<think>.*?</think>", "", raw_text, flags=re.DOTALL).strip()
 
-    # Strip markdown code fences
-    raw_text = re.sub(r"^```(?:json)?\s*", "", raw_text, flags=re.MULTILINE)
-    raw_text = re.sub(r"\s*```$", "", raw_text, flags=re.MULTILINE)
-    raw_text = raw_text.strip()
+    # Extract JSON substring from the first '{' to the last '}'
+    start_idx = raw_text.find('{')
+    end_idx = raw_text.rfind('}')
+    
+    if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+        raw_text = raw_text[start_idx:end_idx + 1]
 
     try:
         return json.loads(raw_text)
@@ -182,12 +184,12 @@ def _parse_response(raw_text: str) -> dict:
             "recommendations": [
                 {
                     "id": 1,
-                    "title": "AI Response",
-                    "detail": raw_text,
+                    "title": "Analysis Result",
+                    "detail": "Failed to parse recommendations properly, but here is the raw output: " + raw_text,
                     "estimated_savings": "N/A",
                 }
             ],
-            "summary": "Please review the recommendation above.",
+            "summary": "Please review the information above.",
         }
 
 
@@ -215,6 +217,7 @@ def get_recommendations(summary: dict) -> dict:
         raw_text = _call_model(client, PRIMARY_MODEL, prompt)
 
     except Exception as primary_exc:
+        logger.error(f"Primary model {PRIMARY_MODEL} failed. Exception: {primary_exc}")
         if _is_model_unavailable(primary_exc):
             # Primary model not accessible on this key — use documented fallback
             logger.warning(

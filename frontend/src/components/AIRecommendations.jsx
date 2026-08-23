@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { Sparkles, ChevronRight, Loader2, Lightbulb } from 'lucide-react';
+import { Sparkles, ChevronRight, Loader2, Lightbulb, Zap, Droplets } from 'lucide-react';
 import { fetchRecommendations } from '../api/client';
 
-function RecommendationCard({ rec, index }) {
+function RecommendationCard({ rec, index, meterType }) {
   const [expanded, setExpanded] = useState(false);
 
   const colors = [
@@ -28,7 +28,13 @@ function RecommendationCard({ rec, index }) {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-start gap-3">
-          <div className={`h-2 w-2 rounded-full ${dotColors[index % dotColors.length]} mt-1.5 flex-shrink-0`} />
+          <div className={`h-8 w-8 rounded-full ${dotColors[index % dotColors.length]} bg-opacity-20 flex items-center justify-center flex-shrink-0 mt-1`}>
+            {meterType === 'water' ? (
+              <Droplets className={`h-4 w-4 ${dotColors[index % dotColors.length].replace('bg-', 'text-')}`} />
+            ) : (
+              <Zap className={`h-4 w-4 ${dotColors[index % dotColors.length].replace('bg-', 'text-')}`} />
+            )}
+          </div>
           <div>
             <p className="text-sm font-semibold text-slate-200">
               {rec.title || `Recommendation ${index + 1}`}
@@ -46,9 +52,11 @@ function RecommendationCard({ rec, index }) {
       </div>
 
       {expanded && (
-        <p className="mt-3 text-xs text-slate-400 leading-relaxed pl-5 border-l border-slate-700 ml-1 animate-fade-in">
-          {rec.detail}
-        </p>
+        <div className="mt-4 pl-11 animate-fade-in">
+          <p className="text-xs text-slate-400 leading-relaxed whitespace-pre-wrap">
+            {rec.detail}
+          </p>
+        </div>
       )}
     </div>
   );
@@ -170,7 +178,7 @@ export default function AIRecommendations({ costData, anomalyData, forecastData,
 
           <div className="space-y-2 mb-4">
             {(result.recommendations || []).map((rec, i) => (
-              <RecommendationCard key={i} rec={rec} index={i} />
+              <RecommendationCard key={i} rec={rec} index={i} meterType={meterType} />
             ))}
           </div>
 
