@@ -92,7 +92,7 @@ def get_recommendations(summary: dict) -> dict:
             {"role": "system", "content": "You are a highly knowledgeable energy efficiency consultant."},
             {"role": "user", "content": f"Analyze the following utility consumption summary and identify key trends, issues, and notable figures. Keep it to a short paragraph.\n\n{summary_text}"}
         ]
-        analysis = _call_model(messages)
+        analysis = _call_model(messages, disable_thinking=True)
     except Exception as e:
         logger.error(f"Step 1 (Analyze) failed: {e}")
         raise Exception(f"Step 1 (Analyze) failed: {str(e)}")
@@ -104,7 +104,7 @@ def get_recommendations(summary: dict) -> dict:
         logger.info("Starting Step 2 (Reason)...")
         messages.append({"role": "assistant", "content": analysis})
         messages.append({"role": "user", "content": "Think step-by-step about why the usage is at this level, what the anomalies or peaks might mean, and what practical steps the user could take to reduce consumption. Provide a short paragraph of reasoning."})
-        reasoning = _call_model(messages)
+        reasoning = _call_model(messages, disable_thinking=True)
     except Exception as e:
         logger.error(f"Step 2 (Reason) failed: {e}")
         raise Exception(f"Step 2 (Reason) failed: {str(e)}")
