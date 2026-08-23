@@ -79,45 +79,14 @@ def _call_model(messages: list, disable_thinking: bool = False) -> str:
 def get_recommendations(summary: dict) -> dict:
     """
     Send usage summary to NVIDIA and return structured recommendations.
-    Uses a 3-step pipeline.
+    Uses a single comprehensive prompt to guarantee execution under 30-40 seconds.
     """
     meter_type = summary.get("meter_type", "utility")
     summary_text = build_summary_text(summary)
     
-    # Step 1: Analyze
-    t0 = time.time()
-    try:
-        logger.info("Starting Step 1 (Analyze)...")
-        messages = [
-            {"role": "system", "content": "You are a highly knowledgeable energy efficiency consultant."},
-            {"role": "user", "content": f"Analyze the following utility consumption summary and identify key trends, issues, and notable figures. Keep it to a short paragraph.\n\n{summary_text}"}
-        ]
-        analysis = _call_model(messages, disable_thinking=True)
-    except Exception as e:
-        logger.error(f"Step 1 (Analyze) failed: {e}")
-        raise Exception(f"Step 1 (Analyze) failed: {str(e)}")
-    t1 = time.time()
-    logger.info(f"Step 1 (Analyze) took {t1 - t0:.2f} seconds")
-
-    # Step 2: Reason
-    try:
-        logger.info("Starting Step 2 (Reason)...")
-        messages.append({"role": "assistant", "content": analysis})
-        messages.append({"role": "user", "content": "Think step-by-step about why the usage is at this level, what the anomalies or peaks might mean, and what practical steps the user could take to reduce consumption. Provide a short paragraph of reasoning."})
-        reasoning = _call_model(messages, disable_thinking=True)
-    except Exception as e:
-        logger.error(f"Step 2 (Reason) failed: {e}")
-        raise Exception(f"Step 2 (Reason) failed: {str(e)}")
-    t2 = time.time()
-    logger.info(f"Step 2 (Reason) took {t2 - t1:.2f} seconds")
-
-    # Step 3: Recommend
     import re
     def _parse_json(text: str) -> dict:
-        # Strip `<think>...</think>` tags if present
         text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
-        
-        # First try to find markdown fences
         json_blocks = re.findall(r'```(?:json)?\s*(\{.*?\})\s*```', text, flags=re.DOTALL)
         if json_blocks:
             for block in reversed(json_blocks):
@@ -128,7 +97,6 @@ def get_recommendations(summary: dict) -> dict:
                 except json.JSONDecodeError:
                     pass
         
-        # Fallback: search backwards for valid outermost `{ ... }` block
         end_idx = text.rfind('}')
         while end_idx != -1:
             start_idx = text.rfind('{', 0, end_idx)
@@ -145,51 +113,57 @@ def get_recommendations(summary: dict) -> dict:
             
         raise ValueError("Valid JSON not found in response")
 
+    t0 = time.time()
     try:
-        logger.info("Starting Step 3 (Recommend)...")
-        messages.append({"role": "assistant", "content": reasoning})
-        
-        prompt_content = f"""Provide exactly 5-7 specific, actionable, and practical recommendations to help the user reduce their {meter_type} usage and costs.
-Each recommendation must be specific to {meter_type} consumption. Include estimated savings percentage or amount where possible. The 'detail' field for each recommendation should be written as a polished, natural paragraph (2-3 full sentences). End with a brief one-sentence motivational summary.
-Also include a 'greeting' field with a one-sentence personalized opening line that reads like a natural assistant greeting summarizing their situation (e.g. "Based on your electricity usage over the past year, here are some ways you could reduce costs and address the anomalies I found.").
+        logger.info("Starting Comprehensive AI Prompt...")
+        prompt_content = f"""Analyze the following utility consumption summary, identify key trends/issues, reason about why the usage is at this level, and provide exactly 5-7 specific, actionable recommendations to help the user reduce their {meter_type} usage and costs.
 
-Format your response exactly as a JSON object with this structure:
+Summary Data:
+{summary_text}
+
+Each recommendation must be specific to {meter_type} consumption. Include estimated savings percentage or amount where possible. The 'detail' field for each recommendation should be written as a polished, natural paragraph (2-3 full sentences).
+Include a 'greeting' field with a one-sentence personalized opening line summarizing their situation.
+Include your analysis and reasoning in the 'analysis' and 'reasoning' fields.
+
+Format your response exactly as a JSON object with this structure (no markdown, just JSON):
 {{
+  "analysis": "Short paragraph analyzing trends, issues, and notable figures...",
+  "reasoning": "Short paragraph of step-by-step reasoning...",
   "greeting": "Personalized opening line...",
   "recommendations": [
-    {{"id": 1, "title": "Short Title", "detail": "Polished paragraph explanation...", "estimated_savings": "X%"}},
-    ...
+    {{"id": 1, "title": "Short Title", "detail": "Polished paragraph explanation...", "estimated_savings": "X%"}}
   ],
   "summary": "One-sentence motivational closing."
 }}"""
-        messages.append({"role": "user", "content": prompt_content})
-        messages[0] = {"role": "system", "content": "You are a highly knowledgeable energy efficiency consultant. Always respond in valid JSON format when requested."}
         
+        messages = [
+            {"role": "system", "content": "You are a highly knowledgeable energy efficiency consultant. Always respond in valid JSON format."},
+            {"role": "user", "content": prompt_content}
+        ]
+        
+        # We leave thinking disabled for this single prompt to guarantee it stays extremely fast (under 30s)
+        # while returning the exact JSON structure we need.
         recs_json_str = _call_model(messages, disable_thinking=True)
         
         try:
             result = _parse_json(recs_json_str)
         except ValueError:
-            logger.warning(f"Step 3 parsing failed, retrying with stricter prompt... Raw: {recs_json_str[:200]}")
-            # Retry once
+            logger.warning("Parsing failed, retrying with stricter prompt...")
             messages.append({"role": "assistant", "content": recs_json_str})
-            messages.append({"role": "user", "content": "Failed to parse JSON. Respond with ONLY the JSON object, no reasoning, no explanation, no markdown. Do not include <think> tags."})
+            messages.append({"role": "user", "content": "Failed to parse JSON. Respond with ONLY the JSON object, no reasoning, no explanation, no markdown."})
             recs_json_str_retry = _call_model(messages, disable_thinking=True)
             try:
                 result = _parse_json(recs_json_str_retry)
             except ValueError:
-                logger.error(f"Failed to generate valid JSON recommendations after retry. Raw: {recs_json_str_retry[:500]}")
                 raise Exception("Failed to generate valid JSON recommendations after retry.")
                 
     except Exception as e:
-        logger.error(f"Step 3 (Recommend) failed: {e}")
-        raise Exception(f"Step 3 (Recommend) failed: {str(e)}")
+        logger.error(f"Comprehensive Prompt failed: {e}")
+        raise Exception(f"AI service failed: {str(e)}")
         
-    t3 = time.time()
-    logger.info(f"Step 3 (Recommend) took {t3 - t2:.2f} seconds")
+    t1 = time.time()
+    logger.info(f"AI Pipeline took {t1 - t0:.2f} seconds")
 
-    result["analysis"] = analysis
-    result["reasoning"] = reasoning
     result["model_used"] = PRIMARY_MODEL
     result["primary_model"] = PRIMARY_MODEL
     result["fallback_used"] = False
