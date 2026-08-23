@@ -58,7 +58,7 @@ def build_summary_text(summary: dict) -> str:
 - **Peak Usage Day**: {peak_day.get('date', 'N/A')} ({peak_day.get('usage', 'N/A')} {unit}, ₹{peak_day.get('cost', 'N/A')})
 - **Forecast Trend**: {forecast_trend}"""
 
-def _call_model(messages: list, disable_thinking: bool = False) -> str:
+def _call_model(messages: list, disable_thinking: bool = False, json_mode: bool = False) -> str:
     client = _get_client()
     kwargs = {
         "model": PRIMARY_MODEL,
@@ -72,6 +72,9 @@ def _call_model(messages: list, disable_thinking: bool = False) -> str:
     else:
         # Default behavior for steps 1 and 2 if we want it
         kwargs["extra_body"] = {"chat_template_kwargs": {"enable_thinking": True}, "reasoning_budget": 2048}
+        
+    if json_mode:
+        kwargs["response_format"] = {"type": "json_object"}
 
     completion = client.chat.completions.create(**kwargs)
     return completion.choices[0].message.content.strip()
@@ -141,9 +144,9 @@ Format your response exactly as a JSON object with this structure (no markdown, 
             {"role": "user", "content": prompt_content}
         ]
         
-        # We leave thinking disabled for this single prompt to guarantee it stays extremely fast (under 30s)
-        # while returning the exact JSON structure we need.
-        recs_json_str = _call_model(messages, disable_thinking=True)
+        # We disable thinking for this single prompt to guarantee it stays extremely fast (under 30s)
+        # and we use json_mode to guarantee strict JSON formatting without failure.
+        recs_json_str = _call_model(messages, disable_thinking=True, json_mode=True)
         
         try:
             result = _parse_json(recs_json_str)
@@ -151,7 +154,8 @@ Format your response exactly as a JSON object with this structure (no markdown, 
             logger.warning("Parsing failed, retrying with stricter prompt...")
             messages.append({"role": "assistant", "content": recs_json_str})
             messages.append({"role": "user", "content": "Failed to parse JSON. Respond with ONLY the JSON object, no reasoning, no explanation, no markdown."})
-            recs_json_str_retry = _call_model(messages, disable_thinking=True)
+            # On the retry, we can disable thinking since it just needs to fix formatting
+            recs_json_str_retry = _call_model(messages, disable_thinking=True, json_mode=True)
             try:
                 result = _parse_json(recs_json_str_retry)
             except ValueError:
