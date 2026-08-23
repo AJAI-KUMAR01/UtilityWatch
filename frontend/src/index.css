@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --navy-950: #060c1a;
+    --navy-900: #0a1628;
+    --navy-800: #0f1f3d;
+    --navy-700: #162952;
+    --cyan-400: #22d3ee;
+    --cyan-500: #06b6d4;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--navy-950);
+    color: #e2e8f0;
+    font-family: 'Inter', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  /* Custom scrollbar for the anomaly list */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #1e293b;
+    border-radius: 2px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #334155;
+  }
+
+  /* Recharts tooltip override */
+  .recharts-tooltip-wrapper {
+    outline: none !important;
+  }
+
+  /* Selection color */
+  ::selection {
+    background-color: rgba(6, 182, 212, 0.3);
+    color: #e2e8f0;
+  }
+}
+
+@layer utilities {
+  .bg-navy-950 { background-color: #060c1a; }
+  .bg-navy-900 { background-color: #0a1628; }
+  .bg-navy-800 { background-color: #0f1f3d; }
+  .bg-navy-700 { background-color: #162952; }
+  .text-navy-950 { color: #060c1a; }
+
+  /* Glassmorphism helper */
+  .glass {
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    background: linear-gradient(135deg, #22d3ee, #818cf8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
