@@ -58,15 +58,22 @@ def build_summary_text(summary: dict) -> str:
 - **Peak Usage Day**: {peak_day.get('date', 'N/A')} ({peak_day.get('usage', 'N/A')} {unit}, ₹{peak_day.get('cost', 'N/A')})
 - **Forecast Trend**: {forecast_trend}"""
 
-def _call_model(messages: list) -> str:
+def _call_model(messages: list, disable_thinking: bool = False) -> str:
     client = _get_client()
-    completion = client.chat.completions.create(
-        model=PRIMARY_MODEL,
-        messages=messages,
-        temperature=0.4,
-        max_tokens=2048,
-        top_p=0.9,
-    )
+    kwargs = {
+        "model": PRIMARY_MODEL,
+        "messages": messages,
+        "temperature": 0.4,
+        "max_tokens": 4096,
+        "top_p": 0.9,
+    }
+    if disable_thinking:
+        kwargs["extra_body"] = {"chat_template_kwargs": {"enable_thinking": False}}
+    else:
+        # Default behavior for steps 1 and 2 if we want it
+        kwargs["extra_body"] = {"chat_template_kwargs": {"enable_thinking": True}, "reasoning_budget": 2048}
+
+    completion = client.chat.completions.create(**kwargs)
     return completion.choices[0].message.content.strip()
 
 def get_recommendations(summary: dict) -> dict:
@@ -105,49 +112,81 @@ def get_recommendations(summary: dict) -> dict:
     logger.info(f"Step 2 (Reason) took {t2 - t1:.2f} seconds")
 
     # Step 3: Recommend
+    import re
+    def _parse_json(text: str) -> dict:
+        # Strip `<think>...</think>` tags if present
+        text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
+        
+        # First try to find markdown fences
+        json_blocks = re.findall(r'```(?:json)?\s*(\{.*?\})\s*```', text, flags=re.DOTALL)
+        if json_blocks:
+            for block in reversed(json_blocks):
+                try:
+                    parsed = json.loads(block)
+                    if isinstance(parsed, dict) and "recommendations" in parsed:
+                        return parsed
+                except json.JSONDecodeError:
+                    pass
+        
+        # Fallback: search backwards for valid outermost `{ ... }` block
+        end_idx = text.rfind('}')
+        while end_idx != -1:
+            start_idx = text.rfind('{', 0, end_idx)
+            while start_idx != -1:
+                try:
+                    candidate = text[start_idx:end_idx + 1]
+                    parsed = json.loads(candidate)
+                    if isinstance(parsed, dict) and "recommendations" in parsed:
+                        return parsed
+                except json.JSONDecodeError:
+                    pass
+                start_idx = text.rfind('{', 0, start_idx)
+            end_idx = text.rfind('}', 0, end_idx)
+            
+        raise ValueError("Valid JSON not found in response")
+
     try:
         logger.info("Starting Step 3 (Recommend)...")
         messages.append({"role": "assistant", "content": reasoning})
-        messages.append({"role": "user", "content": f"""Provide exactly 5-7 specific, actionable, and practical recommendations to help the user reduce their {meter_type} usage and costs.
-Each recommendation must be specific to {meter_type} consumption. Include estimated savings percentage or amount where possible. Keep each recommendation to 2-3 sentences maximum. End with a brief one-sentence motivational summary.
+        
+        prompt_content = f"""Provide exactly 5-7 specific, actionable, and practical recommendations to help the user reduce their {meter_type} usage and costs.
+Each recommendation must be specific to {meter_type} consumption. Include estimated savings percentage or amount where possible. The 'detail' field for each recommendation should be written as a polished, natural paragraph (2-3 full sentences). End with a brief one-sentence motivational summary.
+Also include a 'greeting' field with a one-sentence personalized opening line that reads like a natural assistant greeting summarizing their situation (e.g. "Based on your electricity usage over the past year, here are some ways you could reduce costs and address the anomalies I found.").
 
 Format your response exactly as a JSON object with this structure:
 {{
+  "greeting": "Personalized opening line...",
   "recommendations": [
-    {{"id": 1, "title": "Short Title", "detail": "Detailed explanation...", "estimated_savings": "X%"}},
+    {{"id": 1, "title": "Short Title", "detail": "Polished paragraph explanation...", "estimated_savings": "X%"}},
     ...
   ],
   "summary": "One-sentence motivational closing."
-}}"""})
-        # Add system prompt for JSON
+}}"""
+        messages.append({"role": "user", "content": prompt_content})
         messages[0] = {"role": "system", "content": "You are a highly knowledgeable energy efficiency consultant. Always respond in valid JSON format when requested."}
+        
         recs_json_str = _call_model(messages)
+        
+        try:
+            result = _parse_json(recs_json_str)
+        except ValueError:
+            logger.warning(f"Step 3 parsing failed, retrying with stricter prompt... Raw: {recs_json_str[:200]}")
+            # Retry once
+            messages.append({"role": "assistant", "content": recs_json_str})
+            messages.append({"role": "user", "content": "Failed to parse JSON. Respond with ONLY the JSON object, no reasoning, no explanation, no markdown. Do not include <think> tags."})
+            recs_json_str_retry = _call_model(messages, disable_thinking=True)
+            try:
+                result = _parse_json(recs_json_str_retry)
+            except ValueError:
+                logger.error(f"Failed to generate valid JSON recommendations after retry. Raw: {recs_json_str_retry[:500]}")
+                raise Exception("Failed to generate valid JSON recommendations after retry.")
+                
     except Exception as e:
         logger.error(f"Step 3 (Recommend) failed: {e}")
         raise Exception(f"Step 3 (Recommend) failed: {str(e)}")
+        
     t3 = time.time()
     logger.info(f"Step 3 (Recommend) took {t3 - t2:.2f} seconds")
-    
-    # Parse JSON
-    start_idx = recs_json_str.find('{')
-    end_idx = recs_json_str.rfind('}')
-    if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-        recs_json_str = recs_json_str[start_idx:end_idx + 1]
-
-    try:
-        result = json.loads(recs_json_str)
-    except json.JSONDecodeError:
-        result = {
-            "recommendations": [
-                {
-                    "id": 1,
-                    "title": "Analysis Result",
-                    "detail": "Failed to parse recommendations properly, but here is the raw output: " + recs_json_str,
-                    "estimated_savings": "N/A",
-                }
-            ],
-            "summary": "Please review the information above.",
-        }
 
     result["analysis"] = analysis
     result["reasoning"] = reasoning

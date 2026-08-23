@@ -56,7 +56,7 @@ export const fetchForecast = (meterType, horizon = 30, source = 'demo') =>
 // --- AI endpoint ---
 
 export const fetchRecommendations = (summary) =>
-  api.post('/api/ai/recommendations', summary, { timeout: 90000 });
+  api.post('/api/ai/recommendations', summary, { timeout: 150000 });
 
 export const uploadData = (file, jsonData) => {
   if (file) {

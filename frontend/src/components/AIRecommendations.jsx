@@ -195,6 +195,14 @@ export default function AIRecommendations({ costData, anomalyData, forecastData,
             </div>
           </div>
 
+          {result.greeting && (
+            <div className="mb-6 px-2">
+              <p className="text-sm text-slate-300 leading-relaxed font-medium">
+                {result.greeting}
+              </p>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             {(result.recommendations || []).map((rec, i) => (
               <RecommendationCard key={i} rec={rec} index={i} meterType={meterType} />
