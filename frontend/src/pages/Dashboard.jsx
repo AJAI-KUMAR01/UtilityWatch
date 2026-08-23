@@ -209,7 +209,7 @@ export default function Dashboard() {
 
               <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 ml-2">
                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Live • {lastRefresh.toLocaleTimeString()}</span>
+                <span>Live</span>
               </div>
               <button
                 id="refresh-all-btn"
@@ -230,9 +230,11 @@ export default function Dashboard() {
           {/* Meter toggle + summary + Rate Editor */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <p className="text-slate-400 text-sm">
-                Monitoring <span className="text-white font-semibold capitalize">{meterType}</span> consumption · {dataSource === 'demo' ? 'Last 12 months' : 'Custom Dataset'}
-              </p>
+              <div className="flex items-center gap-3 text-slate-400 text-sm">
+                <span>Monitoring <span className="text-white font-semibold capitalize">{meterType}</span> consumption</span>
+                <span className="w-px h-3.5 bg-slate-700"></span>
+                <span>{dataSource === 'demo' ? 'Last 12 months' : 'Custom Dataset'}</span>
+              </div>
               {uploadError && <p className="text-red-400 text-xs mt-1">{uploadError}</p>}
             </div>
             
@@ -363,8 +365,12 @@ export default function Dashboard() {
             </>
           )}
   
-          <footer className="text-center text-xs text-slate-600 pt-4 border-t border-slate-800/40">
-            <p>UtilityWatch · NVIDIA Nemotron AI (nemotron-3.5-lightning-30b-a3b) · Flask + React</p>
+          <footer className="flex items-center justify-center gap-3 text-xs text-slate-600 pt-4 border-t border-slate-800/40">
+            <span>UtilityWatch</span>
+            <span className="w-px h-3.5 bg-slate-700"></span>
+            <span>Powered by NVIDIA AI</span>
+            <span className="w-px h-3.5 bg-slate-700"></span>
+            <span>Flask + React</span>
           </footer>
         </main>
     </div>

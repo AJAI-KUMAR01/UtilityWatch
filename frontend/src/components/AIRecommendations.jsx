@@ -159,7 +159,7 @@ export default function AIRecommendations({ costData, anomalyData, forecastData,
         <div className="flex flex-col items-center py-10 gap-3 animate-fade-in">
           <Loader2 className="h-8 w-8 text-cyan-400 animate-spin" />
           <p className="text-sm text-slate-400">{getLoadingMessage()}</p>
-          <p className="text-xs text-slate-600">Powered by NVIDIA Nemotron (30b)</p>
+          <p className="text-xs text-slate-600">Powered by NVIDIA AI</p>
         </div>
       )}
 
@@ -190,7 +190,7 @@ export default function AIRecommendations({ costData, anomalyData, forecastData,
                 </span>
               )}
               <span className="text-[10px] text-slate-500">
-                {result.model_used || 'nvidia'}
+                {result.model_used?.includes('nvidia') ? 'NVIDIA AI' : (result.model_used || 'NVIDIA AI')}
               </span>
             </div>
           </div>
