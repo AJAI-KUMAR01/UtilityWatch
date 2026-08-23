@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Sparkles, ChevronRight, Loader2, Lightbulb, Zap, Droplets } from 'lucide-react';
 import { fetchRecommendations } from '../api/client';
 
@@ -64,8 +64,21 @@ function RecommendationCard({ rec, index, meterType }) {
 
 export default function AIRecommendations({ costData, anomalyData, forecastData, meterType }) {
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(1);
   const [error, setError] = useState(null);
   const [result, setResult] = useState(null);
+
+  // Cycle through loading steps
+  useEffect(() => {
+    let interval;
+    if (loading) {
+      setLoadingStep(1);
+      interval = setInterval(() => {
+        setLoadingStep((prev) => (prev < 3 ? prev + 1 : 3));
+      }, 10000); // switch every 10 seconds
+    }
+    return () => clearInterval(interval);
+  }, [loading]);
 
   const handleFetch = async () => {
     if (!costData?.summary) return;
@@ -111,6 +124,12 @@ export default function AIRecommendations({ costData, anomalyData, forecastData,
     }
   };
 
+  const getLoadingMessage = () => {
+    if (loadingStep === 1) return "Step 1/3: Analyzing your usage...";
+    if (loadingStep === 2) return "Step 2/3: Reasoning about causes...";
+    return "Step 3/3: Generating recommendations...";
+  };
+
   return (
     <div className="animate-fade-in">
       {!result && !loading && (
@@ -139,7 +158,7 @@ export default function AIRecommendations({ costData, anomalyData, forecastData,
       {loading && (
         <div className="flex flex-col items-center py-10 gap-3 animate-fade-in">
           <Loader2 className="h-8 w-8 text-cyan-400 animate-spin" />
-          <p className="text-sm text-slate-400">Analyzing your consumption data...</p>
+          <p className="text-sm text-slate-400">{getLoadingMessage()}</p>
           <p className="text-xs text-slate-600">Powered by NVIDIA Nemotron (30b)</p>
         </div>
       )}

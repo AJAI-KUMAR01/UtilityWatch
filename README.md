@@ -130,6 +130,12 @@ Synthetic data covers 365 days of hourly readings with:
 - Day-of-week variation
 - Injected anomalies (spikes + drops at random intervals)
 
+**Example row:**
+```csv
+timestamp,meter_type,usage,unit
+2024-01-01 00:00:00,electricity,1.25,kWh
+```
+
 ---
 
 ## API Reference

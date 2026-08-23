@@ -31,29 +31,41 @@ api.interceptors.response.use(
 
 export const fetchHealth = () => api.get('/api/health');
 
-export const fetchConsumption = (meterType, range = 'year', aggregate = 'daily') =>
+export const fetchConsumption = (meterType, range = 'year', aggregate = 'daily', source = 'demo') =>
   api.get('/api/consumption', {
-    params: { meter_type: meterType, range, aggregate },
+    params: { meter_type: meterType, range, aggregate, source },
   });
 
 // --- Analytics endpoints ---
 
-export const fetchAnomalies = (meterType) =>
+export const fetchAnomalies = (meterType, source = 'demo') =>
   api.get('/api/analytics/anomalies', {
-    params: { meter_type: meterType },
+    params: { meter_type: meterType, source },
   });
 
-export const fetchCost = (meterType, rate = null) =>
+export const fetchCost = (meterType, rate = null, source = 'demo') =>
   api.get('/api/analytics/cost', {
-    params: { meter_type: meterType, ...(rate !== null && { rate }) },
+    params: { meter_type: meterType, source, ...(rate !== null && { rate }) },
   });
 
-export const fetchForecast = (meterType, horizon = 30) =>
+export const fetchForecast = (meterType, horizon = 30, source = 'demo') =>
   api.get('/api/analytics/forecast', {
-    params: { meter_type: meterType, horizon },
+    params: { meter_type: meterType, horizon, source },
   });
 
 // --- AI endpoint ---
 
 export const fetchRecommendations = (summary) =>
-  api.post('/api/ai/recommendations', summary);
+  api.post('/api/ai/recommendations', summary, { timeout: 90000 });
+
+export const uploadData = (file, jsonData) => {
+  if (file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    return api.post('/api/data/user-upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  } else {
+    return api.post('/api/data/user-upload', jsonData);
+  }
+};

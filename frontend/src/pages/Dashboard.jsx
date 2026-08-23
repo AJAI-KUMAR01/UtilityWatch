@@ -224,134 +224,149 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* Main content */}
-      <main className="relative z-10 max-w-7xl mx-auto px-6 py-8 space-y-8">
-
-        {/* Meter toggle + summary + Rate Editor */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <p className="text-slate-400 text-sm">
-              Monitoring <span className="text-white font-semibold capitalize">{meterType}</span> consumption · {dataSource === 'demo' ? 'Last 12 months' : 'Custom Dataset'}
-            </p>
-            {uploadError && <p className="text-red-400 text-xs mt-1">{uploadError}</p>}
-          </div>
+        {/* Main content */}
+        <main className="relative z-10 max-w-7xl mx-auto px-6 py-8 space-y-8">
           
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 bg-navy-900/60 border border-slate-800/60 rounded-xl px-3 py-1.5">
-              <span className="text-xs text-slate-400 font-medium">Rate: ₹</span>
-              <input 
-                type="number" 
-                step="0.01"
-                value={currentRate}
-                onChange={(e) => {
-                  const val = parseFloat(e.target.value) || 0;
-                  if (meterType === 'electricity') setElecRate(val);
-                  else setWaterRate(val);
-                }}
-                className="bg-transparent border-b border-slate-700 w-16 text-xs text-white focus:outline-none focus:border-cyan-400 text-center"
-              />
-              <span className="text-xs text-slate-400 font-medium">/{unit}</span>
+          {/* Meter toggle + summary + Rate Editor */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-slate-400 text-sm">
+                Monitoring <span className="text-white font-semibold capitalize">{meterType}</span> consumption · {dataSource === 'demo' ? 'Last 12 months' : 'Custom Dataset'}
+              </p>
+              {uploadError && <p className="text-red-400 text-xs mt-1">{uploadError}</p>}
             </div>
-            <MeterToggle value={meterType} onChange={setMeterType} />
-          </div>
-        </div>
-
-        {/* Cost Cards */}
-        <section id="cost-section" aria-label="Cost Analysis">
-          {costLoading && <LoadingSpinner text="Calculating costs..." />}
-          {costError && <ErrorMessage message={costError} onRetry={costReload} />}
-          {!costLoading && !costError && costData && (
-            <CostCards costData={costData} meterType={meterType} />
-          )}
-        </section>
-
-        {/* Main charts row */}
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-
-          {/* Consumption chart (larger) */}
-          <SectionCard
-            id="consumption-section"
-            title="Usage Over Time"
-            icon={BarChart3}
-            accentColor="cyan"
-            className="xl:col-span-3"
-          >
-            {cLoading && <LoadingSpinner text="Loading consumption data..." />}
-            {cError && <ErrorMessage message={cError} onRetry={cReload} />}
-            {!cLoading && !cError && (
-              <ConsumptionChart
-                data={consumptionData?.data || []}
-                anomalies={anomalyData?.anomalies || []}
-                meterType={meterType}
-              />
-            )}
-          </SectionCard>
-
-          {/* Anomaly panel */}
-          <SectionCard
-            id="anomaly-section"
-            title="Anomaly Detection"
-            icon={AlertCircle}
-            accentColor="red"
-            className="xl:col-span-2"
-          >
-            {aLoading && <LoadingSpinner text="Scanning for anomalies..." />}
-            {aError && <ErrorMessage message={aError} onRetry={aReload} />}
-            {!aLoading && !aError && (
-              <AnomalyPanel anomalyData={anomalyData} meterType={meterType} />
-            )}
-          </SectionCard>
-        </div>
-
-        {/* Forecast Row (Full Width) */}
-        <SectionCard
-          id="forecast-section"
-          title="30-Day Forecast (Holt-Winters)"
-          icon={TrendingUp}
-          accentColor="violet"
-        >
-          {fLoading && <LoadingSpinner text="Generating forecast..." />}
-          {fError && <ErrorMessage message={fError} onRetry={fReload} />}
-          {!fLoading && !fError && forecastData && (
-            <>
-              <ForecastChart
-                historical={forecastData.historical || []}
-                forecast={forecastData.forecast || []}
-                meterType={meterType}
-              />
-              <div className="mt-3 flex items-center gap-4 text-[10px] text-slate-500">
-                <div className="flex items-center gap-1.5">
-                  <div className="h-2 w-6 bg-cyan-400 rounded-full" />
-                  <span>Historical</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="h-2 w-6 border-b-2 border-dashed border-violet-400 rounded-full" />
-                  <span>Forecast ({forecastData.model?.replace(/_/g, ' ')})</span>
-                </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 bg-navy-900/60 border border-slate-800/60 rounded-xl px-3 py-1.5">
+                <span className="text-xs text-slate-400 font-medium">Rate: ₹</span>
+                <input 
+                  type="number" 
+                  step="0.01"
+                  value={currentRate}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value) || 0;
+                    if (meterType === 'electricity') setElecRate(val);
+                    else setWaterRate(val);
+                  }}
+                  className="bg-transparent border-b border-slate-700 w-16 text-xs text-white focus:outline-none focus:border-cyan-400 text-center"
+                />
+                <span className="text-xs text-slate-400 font-medium">/{unit}</span>
               </div>
+              <MeterToggle value={meterType} onChange={setMeterType} />
+            </div>
+          </div>
+
+          {dataSource === 'user' && (!consumptionData || !consumptionData.data || consumptionData.data.length === 0) && !cLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-navy-900/40 rounded-3xl border border-slate-800/60 shadow-xl">
+              <div className="h-20 w-20 bg-slate-800/50 rounded-full flex items-center justify-center mb-6">
+                <Activity className="h-10 w-10 text-slate-500" />
+              </div>
+              <h3 className="text-xl font-semibold text-slate-200 mb-2">No data uploaded yet</h3>
+              <p className="text-sm text-slate-400 max-w-sm mb-6">
+                Click "Upload CSV" above to get started. Ensure your CSV has columns: <br/>
+                <code className="text-cyan-400 bg-cyan-400/10 px-1.5 py-0.5 rounded text-xs mt-2 inline-block">timestamp, meter_type, usage, unit</code>
+              </p>
+            </div>
+          ) : (
+            <>
+              {/* Cost Cards */}
+              <section id="cost-section" aria-label="Cost Analysis">
+                {costLoading && <LoadingSpinner text="Calculating costs..." />}
+                {costError && <ErrorMessage message={costError} onRetry={costReload} />}
+                {!costLoading && !costError && costData && (
+                  <CostCards costData={costData} meterType={meterType} />
+                )}
+              </section>
+      
+              {/* Main charts row */}
+              <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+      
+                {/* Consumption chart (larger) */}
+                <SectionCard
+                  id="consumption-section"
+                  title="Usage Over Time"
+                  icon={BarChart3}
+                  accentColor="cyan"
+                  className="xl:col-span-3"
+                >
+                  {cLoading && <LoadingSpinner text="Loading consumption data..." />}
+                  {cError && <ErrorMessage message={cError} onRetry={cReload} />}
+                  {!cLoading && !cError && (
+                    <ConsumptionChart
+                      data={consumptionData?.data || []}
+                      anomalies={anomalyData?.anomalies || []}
+                      meterType={meterType}
+                    />
+                  )}
+                </SectionCard>
+      
+                {/* Anomaly panel */}
+                <SectionCard
+                  id="anomaly-section"
+                  title="Anomaly Detection"
+                  icon={AlertCircle}
+                  accentColor="red"
+                  className="xl:col-span-2"
+                >
+                  {aLoading && <LoadingSpinner text="Scanning for anomalies..." />}
+                  {aError && <ErrorMessage message={aError} onRetry={aReload} />}
+                  {!aLoading && !aError && (
+                    <AnomalyPanel anomalyData={anomalyData} meterType={meterType} />
+                  )}
+                </SectionCard>
+              </div>
+      
+              {/* Forecast Row (Full Width) */}
+              <SectionCard
+                id="forecast-section"
+                title="30-Day Forecast (Holt-Winters)"
+                icon={TrendingUp}
+                accentColor="violet"
+              >
+                {fLoading && <LoadingSpinner text="Generating forecast..." />}
+                {fError && <ErrorMessage message={fError} onRetry={fReload} />}
+                {!fLoading && !fError && forecastData && (
+                  <>
+                    <ForecastChart
+                      historical={forecastData.historical || []}
+                      forecast={forecastData.forecast || []}
+                      meterType={meterType}
+                    />
+                    <div className="mt-3 flex items-center gap-4 text-[10px] text-slate-500">
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-2 w-6 bg-cyan-400 rounded-full" />
+                        <span>Historical</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="h-2 w-6 border-b-2 border-dashed border-violet-400 rounded-full" />
+                        <span>Forecast ({forecastData.model?.replace(/_/g, ' ')})</span>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </SectionCard>
+      
+              {/* AI Recommendations Row (Full Width) */}
+              <SectionCard
+                id="ai-section"
+                title="Agentic AI Recommendations"
+                icon={Brain}
+                accentColor="amber"
+              >
+                <AIRecommendations
+                  costData={costData}
+                  anomalyData={anomalyData}
+                  forecastData={forecastData}
+                  meterType={meterType}
+                />
+              </SectionCard>
             </>
           )}
-        </SectionCard>
-
-        {/* AI Recommendations Row (Full Width) */}
-        <SectionCard
-          id="ai-section"
-          title="Agentic AI Recommendations"
-          icon={Brain}
-          accentColor="amber"
-        >
-          <AIRecommendations
-            costData={costData}
-            anomalyData={anomalyData}
-            forecastData={forecastData}
-            meterType={meterType}
-          />
-        </SectionCard>
-
-        <footer className="text-center text-xs text-slate-600 pt-4 border-t border-slate-800/40">
-          <p>UtilityWatch · NVIDIA Nemotron AI (nemotron-3.5-lightning-30b-a3b) · Flask + React</p>
-        </footer>
-      </main>
+  
+          <footer className="text-center text-xs text-slate-600 pt-4 border-t border-slate-800/40">
+            <p>UtilityWatch · NVIDIA Nemotron AI (nemotron-3.5-lightning-30b-a3b) · Flask + React</p>
+          </footer>
+        </main>
     </div>
   );
 }

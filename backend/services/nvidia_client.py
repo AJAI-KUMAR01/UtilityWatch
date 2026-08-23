@@ -10,7 +10,7 @@ Uses a 3-step agentic pipeline: Analyze -> Reason -> Recommend.
 import json
 import logging
 import os
-import re
+import time
 
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -34,10 +34,7 @@ def _get_client() -> OpenAI:
         )
     return _client
 
-def build_prompt(summary: dict) -> str:
-    """
-    Construct a structured prompt from usage summary stats using the 3-step Agentic Pipeline.
-    """
+def build_summary_text(summary: dict) -> str:
     meter_type = summary.get("meter_type", "utility")
     unit = summary.get("unit", "units")
     avg_daily = summary.get("avg_daily_usage", "N/A")
@@ -49,13 +46,7 @@ def build_prompt(summary: dict) -> str:
     forecast_trend = summary.get("forecast_trend", "stable")
     rate = summary.get("rate_per_unit", "N/A")
 
-    prompt = f"""You are an expert energy efficiency consultant. Use a 3-step process to analyze and provide recommendations.
-    
-1. ANALYZE: Review the utility consumption summary below.
-2. REASON: Think step-by-step about why the usage is at this level, what anomalies might mean, and what practical steps the user could take to reduce consumption.
-3. RECOMMEND: Provide 5-7 specific, actionable, and practical recommendations to help the user reduce their {meter_type} usage and costs.
-
-## Utility Summary
+    return f"""## Utility Summary
 - **Meter Type**: {meter_type.capitalize()}
 - **Unit**: {unit}
 - **Average Daily Usage**: {avg_daily} {unit}
@@ -65,95 +56,103 @@ def build_prompt(summary: dict) -> str:
 - **Tariff Rate**: ₹{rate} per {unit}
 - **Anomalies Detected**: {anomaly_count} unusual usage spikes or drops
 - **Peak Usage Day**: {peak_day.get('date', 'N/A')} ({peak_day.get('usage', 'N/A')} {unit}, ₹{peak_day.get('cost', 'N/A')})
-- **Forecast Trend**: {forecast_trend}
+- **Forecast Trend**: {forecast_trend}"""
 
-## Instructions for Recommendations
-1. Provide exactly 5-7 recommendations numbered as a list.
-2. Each recommendation must be specific to {meter_type} consumption.
-3. Include estimated savings percentage or amount where possible.
-4. Keep each recommendation to 2-3 sentences maximum.
-5. End with a brief one-sentence motivational summary.
-6. Do NOT make up data — base advice strictly on the statistics above.
+def _call_model(messages: list) -> str:
+    client = _get_client()
+    completion = client.chat.completions.create(
+        model=PRIMARY_MODEL,
+        messages=messages,
+        temperature=0.4,
+        max_tokens=2048,
+        top_p=0.9,
+    )
+    return completion.choices[0].message.content.strip()
+
+def get_recommendations(summary: dict) -> dict:
+    """
+    Send usage summary to NVIDIA and return structured recommendations.
+    Uses a 3-step pipeline.
+    """
+    meter_type = summary.get("meter_type", "utility")
+    summary_text = build_summary_text(summary)
+    
+    # Step 1: Analyze
+    t0 = time.time()
+    try:
+        logger.info("Starting Step 1 (Analyze)...")
+        messages = [
+            {"role": "system", "content": "You are a highly knowledgeable energy efficiency consultant."},
+            {"role": "user", "content": f"Analyze the following utility consumption summary and identify key trends, issues, and notable figures. Keep it to a short paragraph.\n\n{summary_text}"}
+        ]
+        analysis = _call_model(messages)
+    except Exception as e:
+        logger.error(f"Step 1 (Analyze) failed: {e}")
+        raise Exception(f"Step 1 (Analyze) failed: {str(e)}")
+    t1 = time.time()
+    logger.info(f"Step 1 (Analyze) took {t1 - t0:.2f} seconds")
+
+    # Step 2: Reason
+    try:
+        logger.info("Starting Step 2 (Reason)...")
+        messages.append({"role": "assistant", "content": analysis})
+        messages.append({"role": "user", "content": "Think step-by-step about why the usage is at this level, what the anomalies or peaks might mean, and what practical steps the user could take to reduce consumption. Provide a short paragraph of reasoning."})
+        reasoning = _call_model(messages)
+    except Exception as e:
+        logger.error(f"Step 2 (Reason) failed: {e}")
+        raise Exception(f"Step 2 (Reason) failed: {str(e)}")
+    t2 = time.time()
+    logger.info(f"Step 2 (Reason) took {t2 - t1:.2f} seconds")
+
+    # Step 3: Recommend
+    try:
+        logger.info("Starting Step 3 (Recommend)...")
+        messages.append({"role": "assistant", "content": reasoning})
+        messages.append({"role": "user", "content": f"""Provide exactly 5-7 specific, actionable, and practical recommendations to help the user reduce their {meter_type} usage and costs.
+Each recommendation must be specific to {meter_type} consumption. Include estimated savings percentage or amount where possible. Keep each recommendation to 2-3 sentences maximum. End with a brief one-sentence motivational summary.
 
 Format your response exactly as a JSON object with this structure:
 {{
-  "analysis": "Your analysis of the data...",
-  "reasoning": "Your reasoning for the recommendations...",
   "recommendations": [
     {{"id": 1, "title": "Short Title", "detail": "Detailed explanation...", "estimated_savings": "X%"}},
     ...
   ],
   "summary": "One-sentence motivational closing."
-}}"""
-
-    return prompt
-
-def _parse_response(raw_text: str) -> dict:
-    """
-    Robustly parse the LLM response into a structured dict.
-    """
-    # Extract JSON substring from the first '{' to the last '}'
-    start_idx = raw_text.find('{')
-    end_idx = raw_text.rfind('}')
+}}"""})
+        # Add system prompt for JSON
+        messages[0] = {"role": "system", "content": "You are a highly knowledgeable energy efficiency consultant. Always respond in valid JSON format when requested."}
+        recs_json_str = _call_model(messages)
+    except Exception as e:
+        logger.error(f"Step 3 (Recommend) failed: {e}")
+        raise Exception(f"Step 3 (Recommend) failed: {str(e)}")
+    t3 = time.time()
+    logger.info(f"Step 3 (Recommend) took {t3 - t2:.2f} seconds")
     
+    # Parse JSON
+    start_idx = recs_json_str.find('{')
+    end_idx = recs_json_str.rfind('}')
     if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
-        raw_text = raw_text[start_idx:end_idx + 1]
+        recs_json_str = recs_json_str[start_idx:end_idx + 1]
 
     try:
-        return json.loads(raw_text)
+        result = json.loads(recs_json_str)
     except json.JSONDecodeError:
-        # Graceful fallback
-        return {
-            "analysis": "Failed to parse analysis properly.",
-            "reasoning": "Failed to parse reasoning properly.",
+        result = {
             "recommendations": [
                 {
                     "id": 1,
                     "title": "Analysis Result",
-                    "detail": "Failed to parse recommendations properly, but here is the raw output: " + raw_text,
+                    "detail": "Failed to parse recommendations properly, but here is the raw output: " + recs_json_str,
                     "estimated_savings": "N/A",
                 }
             ],
             "summary": "Please review the information above.",
         }
 
-def get_recommendations(summary: dict) -> dict:
-    """
-    Send usage summary to NVIDIA and return structured recommendations.
-    """
-    client = _get_client()
-    prompt = build_prompt(summary)
+    result["analysis"] = analysis
+    result["reasoning"] = reasoning
+    result["model_used"] = PRIMARY_MODEL
+    result["primary_model"] = PRIMARY_MODEL
+    result["fallback_used"] = False
 
-    try:
-        logger.info("Calling NVIDIA API with model: %s", PRIMARY_MODEL)
-        completion = client.chat.completions.create(
-            model=PRIMARY_MODEL,
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are a highly knowledgeable energy efficiency consultant. "
-                        "Always respond in valid JSON format exactly as requested. "
-                        "Do not include any text outside the JSON object."
-                    ),
-                },
-                {"role": "user", "content": prompt},
-            ],
-            temperature=0.4,
-            max_tokens=16384,
-            top_p=0.9,
-            extra_body={"chat_template_kwargs":{"enable_thinking":True},"reasoning_budget":16384}
-        )
-        
-        raw_text = completion.choices[0].message.content.strip()
-        result = _parse_response(raw_text)
-
-        result["model_used"] = PRIMARY_MODEL
-        result["primary_model"] = PRIMARY_MODEL
-        result["fallback_used"] = False
-
-        return result
-
-    except Exception as exc:
-        logger.error(f"NVIDIA API model {PRIMARY_MODEL} failed. Exception: {exc}")
-        raise
+    return result
