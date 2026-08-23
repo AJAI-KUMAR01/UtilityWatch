@@ -23,34 +23,36 @@ from routes.ai_routes import ai_bp
 
 
 def create_app() -> Flask:
-    app = Flask(__name__)
+    flask_app = Flask(__name__)
 
-    # Allow cross-origin requests from the Vite dev server and any local origin
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
+    # Allow cross-origin requests
+    allowed_origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+    CORS(flask_app, resources={r"/api/*": {"origins": allowed_origins}})
 
     # Register blueprints
-    app.register_blueprint(data_bp, url_prefix="/api")
-    app.register_blueprint(analytics_bp, url_prefix="/api/analytics")
-    app.register_blueprint(ai_bp, url_prefix="/api/ai")
+    flask_app.register_blueprint(data_bp, url_prefix="/api")
+    flask_app.register_blueprint(analytics_bp, url_prefix="/api/analytics")
+    flask_app.register_blueprint(ai_bp, url_prefix="/api/ai")
 
     # Global error handlers
-    @app.errorhandler(404)
+    @flask_app.errorhandler(404)
     def not_found(e):
         return jsonify({"error": "Endpoint not found"}), 404
 
-    @app.errorhandler(405)
+    @flask_app.errorhandler(405)
     def method_not_allowed(e):
         return jsonify({"error": "Method not allowed"}), 405
 
-    @app.errorhandler(500)
+    @flask_app.errorhandler(500)
     def internal_error(e):
         return jsonify({"error": "Internal server error"}), 500
 
-    return app
+    return flask_app
 
+# Create global app instance for gunicorn
+app = create_app()
 
 if __name__ == "__main__":
-    app = create_app()
     port = int(os.environ.get("PORT", 5000))
     debug = os.environ.get("FLASK_DEBUG", "true").lower() == "true"
     print(f"UtilityWatch API starting on http://localhost:{port}")
