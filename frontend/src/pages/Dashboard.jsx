@@ -12,7 +12,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import logoUrl from '../assets/logo.svg';
 import {
-  fetchConsumption, fetchAnomalies, fetchCost, fetchForecast
+  fetchConsumption, fetchAnomalies, fetchCost, fetchForecast, uploadData
 } from '../api/client';
 
 function SectionCard({ id, title, icon: Icon, children, className = '', accentColor = 'cyan' }) {
@@ -102,23 +102,48 @@ function useAsyncData(fetcher, deps) {
 
 export default function Dashboard() {
   const [meterType, setMeterType] = useState('electricity');
+  const [dataSource, setDataSource] = useState('demo');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
   const [lastRefresh, setLastRefresh] = useState(new Date());
+  
+  // Custom Rates (INR)
+  const [elecRate, setElecRate] = useState(8.00);
+  const [waterRate, setWaterRate] = useState(0.05);
+  const currentRate = meterType === 'electricity' ? elecRate : waterRate;
 
   const { data: consumptionData, loading: cLoading, error: cError, reload: cReload } =
-    useAsyncData(() => fetchConsumption(meterType, 'year', 'daily'), [meterType]);
+    useAsyncData(() => fetchConsumption(meterType, 'year', 'daily', dataSource), [meterType, dataSource]);
 
   const { data: anomalyData, loading: aLoading, error: aError, reload: aReload } =
-    useAsyncData(() => fetchAnomalies(meterType), [meterType]);
+    useAsyncData(() => fetchAnomalies(meterType, dataSource), [meterType, dataSource]);
 
   const { data: costData, loading: costLoading, error: costError, reload: costReload } =
-    useAsyncData(() => fetchCost(meterType), [meterType]);
+    useAsyncData(() => fetchCost(meterType, currentRate, dataSource), [meterType, currentRate, dataSource]);
 
   const { data: forecastData, loading: fLoading, error: fError, reload: fReload } =
-    useAsyncData(() => fetchForecast(meterType, 30), [meterType]);
+    useAsyncData(() => fetchForecast(meterType, 30, dataSource), [meterType, dataSource]);
 
   const handleRefresh = () => {
     cReload(); aReload(); costReload(); fReload();
     setLastRefresh(new Date());
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    setIsUploading(true);
+    setUploadError(null);
+    try {
+      await uploadData(file);
+      setDataSource('user');
+      handleRefresh();
+    } catch (err) {
+      setUploadError(err.message);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const unit = meterType === 'electricity' ? 'kWh' : 'L';
@@ -149,7 +174,40 @@ export default function Dashboard() {
             </div>
 
             <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500">
+              <div className="hidden sm:flex items-center gap-2 bg-navy-900/60 border border-slate-800/60 rounded-xl p-1 mr-4">
+                <button
+                  onClick={() => setDataSource('demo')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ${
+                    dataSource === 'demo' ? 'bg-navy-700 text-slate-200' : 'text-slate-500 hover:text-slate-300'
+                  }`}
+                >
+                  Demo Data
+                </button>
+                <button
+                  onClick={() => setDataSource('user')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ${
+                    dataSource === 'user' ? 'bg-navy-700 text-slate-200' : 'text-slate-500 hover:text-slate-300'
+                  }`}
+                >
+                  My Data
+                </button>
+              </div>
+
+              <div className="relative overflow-hidden">
+                <input 
+                  type="file" 
+                  accept=".csv" 
+                  onChange={handleFileUpload} 
+                  className="absolute inset-0 opacity-0 cursor-pointer" 
+                  disabled={isUploading}
+                />
+                <button className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-cyan-400 border border-cyan-400/30 rounded-lg hover:bg-cyan-400/10 transition-all duration-200 pointer-events-none">
+                  {isUploading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Activity className="h-3.5 w-3.5" />}
+                  Upload CSV
+                </button>
+              </div>
+
+              <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 ml-2">
                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
                 <span>Live • {lastRefresh.toLocaleTimeString()}</span>
               </div>
@@ -169,14 +227,33 @@ export default function Dashboard() {
       {/* Main content */}
       <main className="relative z-10 max-w-7xl mx-auto px-6 py-8 space-y-8">
 
-        {/* Meter toggle + summary */}
+        {/* Meter toggle + summary + Rate Editor */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <p className="text-slate-400 text-sm">
-              Monitoring <span className="text-white font-semibold capitalize">{meterType}</span> consumption · Last 12 months
+              Monitoring <span className="text-white font-semibold capitalize">{meterType}</span> consumption · {dataSource === 'demo' ? 'Last 12 months' : 'Custom Dataset'}
             </p>
+            {uploadError && <p className="text-red-400 text-xs mt-1">{uploadError}</p>}
           </div>
-          <MeterToggle value={meterType} onChange={setMeterType} />
+          
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 bg-navy-900/60 border border-slate-800/60 rounded-xl px-3 py-1.5">
+              <span className="text-xs text-slate-400 font-medium">Rate: ₹</span>
+              <input 
+                type="number" 
+                step="0.01"
+                value={currentRate}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value) || 0;
+                  if (meterType === 'electricity') setElecRate(val);
+                  else setWaterRate(val);
+                }}
+                className="bg-transparent border-b border-slate-700 w-16 text-xs text-white focus:outline-none focus:border-cyan-400 text-center"
+              />
+              <span className="text-xs text-slate-400 font-medium">/{unit}</span>
+            </div>
+            <MeterToggle value={meterType} onChange={setMeterType} />
+          </div>
         </div>
 
         {/* Cost Cards */}
@@ -226,60 +303,53 @@ export default function Dashboard() {
           </SectionCard>
         </div>
 
-        {/* Forecast + AI row */}
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-
-          {/* Forecast chart */}
-          <SectionCard
-            id="forecast-section"
-            title="30-Day Forecast (Holt-Winters)"
-            icon={TrendingUp}
-            accentColor="violet"
-            className="xl:col-span-3"
-          >
-            {fLoading && <LoadingSpinner text="Generating forecast..." />}
-            {fError && <ErrorMessage message={fError} onRetry={fReload} />}
-            {!fLoading && !fError && forecastData && (
-              <>
-                <ForecastChart
-                  historical={forecastData.historical || []}
-                  forecast={forecastData.forecast || []}
-                  meterType={meterType}
-                />
-                <div className="mt-3 flex items-center gap-4 text-[10px] text-slate-500">
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2 w-6 bg-cyan-400 rounded-full" />
-                    <span>Historical</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <div className="h-2 w-6 border-b-2 border-dashed border-violet-400 rounded-full" />
-                    <span>Forecast ({forecastData.model?.replace(/_/g, ' ')})</span>
-                  </div>
+        {/* Forecast Row (Full Width) */}
+        <SectionCard
+          id="forecast-section"
+          title="30-Day Forecast (Holt-Winters)"
+          icon={TrendingUp}
+          accentColor="violet"
+        >
+          {fLoading && <LoadingSpinner text="Generating forecast..." />}
+          {fError && <ErrorMessage message={fError} onRetry={fReload} />}
+          {!fLoading && !fError && forecastData && (
+            <>
+              <ForecastChart
+                historical={forecastData.historical || []}
+                forecast={forecastData.forecast || []}
+                meterType={meterType}
+              />
+              <div className="mt-3 flex items-center gap-4 text-[10px] text-slate-500">
+                <div className="flex items-center gap-1.5">
+                  <div className="h-2 w-6 bg-cyan-400 rounded-full" />
+                  <span>Historical</span>
                 </div>
-              </>
-            )}
-          </SectionCard>
+                <div className="flex items-center gap-1.5">
+                  <div className="h-2 w-6 border-b-2 border-dashed border-violet-400 rounded-full" />
+                  <span>Forecast ({forecastData.model?.replace(/_/g, ' ')})</span>
+                </div>
+              </div>
+            </>
+          )}
+        </SectionCard>
 
-          {/* AI Recommendations */}
-          <SectionCard
-            id="ai-section"
-            title="AI Recommendations"
-            icon={Brain}
-            accentColor="amber"
-            className="xl:col-span-2"
-          >
-            <AIRecommendations
-              costData={costData}
-              anomalyData={anomalyData}
-              forecastData={forecastData}
-              meterType={meterType}
-            />
-          </SectionCard>
-        </div>
+        {/* AI Recommendations Row (Full Width) */}
+        <SectionCard
+          id="ai-section"
+          title="Agentic AI Recommendations"
+          icon={Brain}
+          accentColor="amber"
+        >
+          <AIRecommendations
+            costData={costData}
+            anomalyData={anomalyData}
+            forecastData={forecastData}
+            meterType={meterType}
+          />
+        </SectionCard>
 
-        {/* Footer */}
         <footer className="text-center text-xs text-slate-600 pt-4 border-t border-slate-800/40">
-          <p>UtilityWatch · Groq AI (llama-3.3-70b-versatile / fallback: gpt-oss-20b) · Flask + React</p>
+          <p>UtilityWatch · NVIDIA Nemotron AI (nemotron-3.5-lightning-30b-a3b) · Flask + React</p>
         </footer>
       </main>
     </div>

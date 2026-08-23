@@ -140,7 +140,7 @@ export default function AIRecommendations({ costData, anomalyData, forecastData,
         <div className="flex flex-col items-center py-10 gap-3 animate-fade-in">
           <Loader2 className="h-8 w-8 text-cyan-400 animate-spin" />
           <p className="text-sm text-slate-400">Analyzing your consumption data...</p>
-          <p className="text-xs text-slate-600">Powered by Groq · llama-3.3-70b-versatile (with fallback)</p>
+          <p className="text-xs text-slate-600">Powered by NVIDIA Nemotron (30b)</p>
         </div>
       )}
 
@@ -171,12 +171,12 @@ export default function AIRecommendations({ costData, anomalyData, forecastData,
                 </span>
               )}
               <span className="text-[10px] text-slate-500">
-                {result.model_used || 'groq'}
+                {result.model_used || 'nvidia'}
               </span>
             </div>
           </div>
 
-          <div className="space-y-2 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
             {(result.recommendations || []).map((rec, i) => (
               <RecommendationCard key={i} rec={rec} index={i} meterType={meterType} />
             ))}

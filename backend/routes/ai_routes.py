@@ -1,7 +1,7 @@
 """Routes: AI — /api/ai/recommendations"""
 
 from flask import Blueprint, jsonify, request
-from services.groq_client import get_recommendations
+from services.nvidia_client import get_recommendations
 
 ai_bp = Blueprint("ai", __name__)
 
