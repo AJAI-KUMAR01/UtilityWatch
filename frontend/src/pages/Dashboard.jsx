@@ -194,19 +194,6 @@ export default function Dashboard() {
                 </button>
               </div>
 
-              <div className="relative overflow-hidden">
-                <input 
-                  type="file" 
-                  accept=".csv" 
-                  onChange={handleFileUpload} 
-                  className="absolute inset-0 opacity-0 cursor-pointer" 
-                  disabled={isUploading}
-                />
-                <button className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-cyan-400 border border-cyan-400/30 rounded-lg hover:bg-cyan-400/10 transition-all duration-200 pointer-events-none">
-                  {isUploading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <Activity className="h-3.5 w-3.5" />}
-                  Upload CSV
-                </button>
-              </div>
 
               <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 ml-2">
                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
