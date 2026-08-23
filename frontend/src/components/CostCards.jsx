@@ -1,4 +1,4 @@
-import { DollarSign, Calendar, TrendingUp, TrendingDown } from 'lucide-react';
+import { IndianRupee, Calendar, TrendingUp, TrendingDown } from 'lucide-react';
 
 function StatCard({ id, icon: Icon, label, value, subValue, accent = 'cyan', trend }) {
   const accentMap = {
@@ -65,9 +65,9 @@ export default function CostCards({ costData, meterType }) {
 
   const { summary } = costData;
   const unit = meterType === 'electricity' ? 'kWh' : 'L';
-  const currency = summary.currency || 'USD';
+  const currency = summary.currency || 'INR';
 
-  const fmtCost = (v) => `$${Number(v).toFixed(2)}`;
+  const fmtCost = (v) => `₹${Number(v).toFixed(2)}`;
   const fmtUsage = (v) => `${Number(v).toFixed(1)} ${unit}`;
 
   return (
@@ -77,7 +77,7 @@ export default function CostCards({ costData, meterType }) {
         icon={Calendar}
         label="Avg Daily Cost"
         value={fmtCost(summary.avg_daily_cost)}
-        subValue={`Rate: $${costData.rate_per_unit}/${unit}`}
+        subValue={`Rate: ₹${costData.rate_per_unit}/${unit}`}
         accent="cyan"
       />
       <StatCard
@@ -90,7 +90,7 @@ export default function CostCards({ costData, meterType }) {
       />
       <StatCard
         id="cost-card-monthly"
-        icon={DollarSign}
+        icon={IndianRupee}
         label="Avg Monthly Cost"
         value={fmtCost(summary.avg_monthly_cost)}
         subValue="Per calendar month"
@@ -98,7 +98,7 @@ export default function CostCards({ costData, meterType }) {
       />
       <StatCard
         id="cost-card-total"
-        icon={DollarSign}
+        icon={IndianRupee}
         label="Total Cost (Year)"
         value={fmtCost(summary.total_cost)}
         subValue={`${fmtUsage(summary.total_usage)} consumed`}

@@ -8,24 +8,15 @@ from services.anomaly_detection import detect_anomalies
 from services.forecasting import generate_forecast
 from services.cost_analysis import analyze_costs
 
+from .data_routes import load_data
+
 analytics_bp = Blueprint("analytics", __name__)
 
-DATA_PATH = Path(__file__).parent.parent / "data" / "sample_consumption.csv"
 
-_df_cache = None
-
-
-def load_data() -> pd.DataFrame:
-    global _df_cache
-    if _df_cache is None:
-        if not DATA_PATH.exists():
-            raise FileNotFoundError(f"Dataset not found. Run: python backend/data/generate_data.py")
-        _df_cache = pd.read_csv(DATA_PATH, parse_dates=["timestamp"])
-    return _df_cache
-
-
-def _get_meter_df(meter_type: str) -> pd.DataFrame:
-    df = load_data()
+def _get_meter_df(meter_type: str, source: str = "demo") -> pd.DataFrame:
+    df = load_data(source=source)
+    if df.empty:
+        return df
     return df[df["meter_type"] == meter_type][["timestamp", "usage"]].copy()
 
 
@@ -48,10 +39,15 @@ def get_anomalies():
     except ValueError:
         return jsonify({"error": "z_threshold must be float, rolling_window must be int"}), 400
 
+    source = request.args.get("source", "demo").strip().lower()
+
     try:
-        df = _get_meter_df(meter_type)
+        df = _get_meter_df(meter_type, source=source)
     except FileNotFoundError as e:
         return jsonify({"error": str(e)}), 500
+
+    if df.empty:
+        return jsonify({"anomalies": [], "flagged_count": 0, "meter_type": meter_type})
 
     result = detect_anomalies(df, z_threshold=z_threshold, rolling_window=rolling_window)
     result["meter_type"] = meter_type
@@ -79,8 +75,10 @@ def get_cost():
         except ValueError:
             return jsonify({"error": "rate must be a valid float"}), 400
 
+    source = request.args.get("source", "demo").strip().lower()
+
     try:
-        df = _get_meter_df(meter_type)
+        df = _get_meter_df(meter_type, source=source)
     except FileNotFoundError as e:
         return jsonify({"error": str(e)}), 500
 
@@ -106,10 +104,15 @@ def get_forecast():
     except ValueError:
         return jsonify({"error": "horizon must be an integer"}), 400
 
+    source = request.args.get("source", "demo").strip().lower()
+
     try:
-        df = _get_meter_df(meter_type)
+        df = _get_meter_df(meter_type, source=source)
     except FileNotFoundError as e:
         return jsonify({"error": str(e)}), 500
+
+    if df.empty:
+        return jsonify({"historical": [], "forecast": [], "model": "none", "meter_type": meter_type})
 
     result = generate_forecast(df, horizon=horizon)
     result["meter_type"] = meter_type

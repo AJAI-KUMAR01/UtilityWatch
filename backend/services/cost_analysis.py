@@ -11,8 +11,8 @@ Supported breakdowns:
   - monthly : per-month total cost
 
 Default tariff rates (can be overridden via API parameter):
-  - Electricity: $0.12 per kWh  (US residential average ~2024)
-  - Water:       $0.004 per litre (~$4 per 1000L, typical municipal rate)
+  - Electricity: ₹8 per kWh
+  - Water:       ₹0.05 per litre
 """
 
 import pandas as pd
@@ -21,8 +21,8 @@ from typing import Optional
 
 
 DEFAULT_RATES = {
-    "electricity": 0.12,   # USD per kWh
-    "water": 0.004,        # USD per litre
+    "electricity": 8.00,   # INR per kWh
+    "water": 0.05,         # INR per litre
 }
 
 
@@ -101,7 +101,7 @@ def analyze_costs(
     lowest_day = min(daily, key=lambda x: x["cost"]) if daily else {}
 
     unit = "kWh" if meter_type == "electricity" else "L"
-    currency = "USD"
+    currency = "INR"
 
     return {
         "daily": daily,
