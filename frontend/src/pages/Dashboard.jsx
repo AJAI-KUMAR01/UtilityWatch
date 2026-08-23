@@ -160,9 +160,9 @@ export default function Dashboard() {
 
       {/* Header */}
       <header className="relative z-10 border-b border-slate-800/60 bg-navy-900/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center justify-center sm:justify-start gap-4">
               <div className="flex items-center justify-center h-10 w-10 relative">
                 <div className="absolute inset-0 bg-cyan-400/20 blur-md rounded-full" />
                 <img src={logoUrl} alt="UtilityWatch" className="h-full w-full object-contain relative z-10 drop-shadow-md" />
@@ -173,8 +173,8 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <div className="hidden sm:flex items-center gap-2 bg-navy-900/60 border border-slate-800/60 rounded-xl p-1 mr-4">
+            <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
+              <div className="flex items-center gap-2 bg-navy-900/60 border border-slate-800/60 rounded-xl p-1">
                 <button
                   onClick={() => setDataSource('demo')}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ${
@@ -225,21 +225,21 @@ export default function Dashboard() {
       </header>
 
         {/* Main content */}
-        <main className="relative z-10 max-w-7xl mx-auto px-6 py-8 space-y-8">
+        <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
           
           {/* Meter toggle + summary + Rate Editor */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <div className="flex items-center gap-3 text-slate-400 text-sm">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-slate-400 text-sm">
                 <span>Monitoring <span className="text-white font-semibold capitalize">{meterType}</span> consumption</span>
-                <span className="w-px h-3.5 bg-slate-700"></span>
+                <span className="hidden sm:block w-px h-3.5 bg-slate-700"></span>
                 <span>{dataSource === 'demo' ? 'Last 12 months' : 'Custom Dataset'}</span>
               </div>
               {uploadError && <p className="text-red-400 text-xs mt-1">{uploadError}</p>}
             </div>
             
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 bg-navy-900/60 border border-slate-800/60 rounded-xl px-3 py-1.5">
+            <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
+              <div className="flex items-center gap-2 bg-navy-900/60 border border-slate-800/60 rounded-xl px-3 py-1.5 flex-1 sm:flex-none">
                 <span className="text-xs text-slate-400 font-medium">Rate: ₹</span>
                 <input 
                   type="number" 
@@ -365,12 +365,10 @@ export default function Dashboard() {
             </>
           )}
   
-          <footer className="flex items-center justify-center gap-3 text-xs text-slate-600 pt-4 border-t border-slate-800/40">
+          <footer className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 text-xs text-slate-600 pt-4 border-t border-slate-800/40 text-center">
             <span>UtilityWatch</span>
-            <span className="w-px h-3.5 bg-slate-700"></span>
+            <span className="hidden sm:block w-px h-3.5 bg-slate-700"></span>
             <span>Powered by NVIDIA AI</span>
-            <span className="w-px h-3.5 bg-slate-700"></span>
-            <span>Flask + React</span>
           </footer>
         </main>
     </div>

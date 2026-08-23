@@ -26,7 +26,7 @@ export default function AnomalyPanel({ anomalyData, meterType }) {
   return (
     <div className="animate-fade-in">
       {/* Stats row */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
         {[
           { label: 'Flagged Points', value: anomalyData.flagged_count ?? 0, color: 'text-red-400' },
           { label: 'Total Points', value: anomalyData.total_points ?? 0, color: 'text-slate-300' },

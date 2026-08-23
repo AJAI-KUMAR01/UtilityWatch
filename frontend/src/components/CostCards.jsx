@@ -71,7 +71,7 @@ export default function CostCards({ costData, meterType }) {
   const fmtUsage = (v) => `${Number(v).toFixed(1)} ${unit}`;
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-in">
       <StatCard
         id="cost-card-daily"
         icon={Calendar}
