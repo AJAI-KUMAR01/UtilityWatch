@@ -28,7 +28,7 @@ function StatCard({ id, icon: Icon, label, value, subValue, accent = 'cyan', tre
   return (
     <div
       id={id}
-      className={`relative overflow-hidden rounded-2xl bg-navy-800/60 backdrop-blur-sm border ${colors.border} p-5 flex flex-col gap-3 hover:bg-navy-800/80 transition-all duration-300 group animate-slide-up`}
+      className={`relative overflow-hidden rounded-xl bg-[#111827] backdrop-blur-sm border border-white/5 p-5 flex flex-col gap-3 hover:border-slate-600/60 transition-all duration-200 group animate-slide-up`}
     >
       {/* Background glow */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />

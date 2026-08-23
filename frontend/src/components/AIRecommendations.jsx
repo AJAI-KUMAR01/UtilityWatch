@@ -3,17 +3,6 @@ import { Sparkles, ChevronRight, Loader2, Lightbulb, Zap, Droplets } from 'lucid
 import { fetchRecommendations } from '../api/client';
 
 function RecommendationCard({ rec, index, meterType }) {
-  const [expanded, setExpanded] = useState(false);
-
-  const colors = [
-    'border-cyan-500/20 hover:border-cyan-500/40',
-    'border-violet-500/20 hover:border-violet-500/40',
-    'border-emerald-500/20 hover:border-emerald-500/40',
-    'border-amber-500/20 hover:border-amber-500/40',
-    'border-rose-500/20 hover:border-rose-500/40',
-    'border-sky-500/20 hover:border-sky-500/40',
-    'border-fuchsia-500/20 hover:border-fuchsia-500/40',
-  ];
   const dotColors = [
     'bg-cyan-400', 'bg-violet-400', 'bg-emerald-400',
     'bg-amber-400', 'bg-rose-400', 'bg-sky-400', 'bg-fuchsia-400',
@@ -21,9 +10,8 @@ function RecommendationCard({ rec, index, meterType }) {
 
   return (
     <div
-      className={`rounded-xl bg-navy-900/50 border ${colors[index % colors.length]} p-4 cursor-pointer transition-all duration-300 animate-slide-up`}
+      className={`rounded-xl bg-[#111827] border border-white/5 border-l-4 border-l-cyan-400 p-4 transition-all duration-300 animate-slide-up hover:border-slate-600/60 hover:border-l-cyan-400`}
       style={{ animationDelay: `${index * 60}ms` }}
-      onClick={() => setExpanded(!expanded)}
       id={`recommendation-${index + 1}`}
     >
       <div className="flex items-start justify-between gap-3">
@@ -46,18 +34,13 @@ function RecommendationCard({ rec, index, meterType }) {
             )}
           </div>
         </div>
-        <ChevronRight
-          className={`h-4 w-4 text-slate-500 flex-shrink-0 transition-transform duration-200 ${expanded ? 'rotate-90' : ''}`}
-        />
       </div>
 
-      {expanded && (
-        <div className="mt-4 pl-11 animate-fade-in">
-          <p className="text-xs text-slate-400 leading-relaxed whitespace-pre-wrap">
-            {rec.detail}
-          </p>
-        </div>
-      )}
+      <div className="mt-4 pl-11">
+        <p className="text-xs text-slate-400 leading-relaxed whitespace-pre-wrap">
+          {rec.detail}
+        </p>
+      </div>
     </div>
   );
 }

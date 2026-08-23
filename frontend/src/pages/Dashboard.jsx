@@ -11,6 +11,9 @@ import AIRecommendations from '../components/AIRecommendations';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import UploadZone from '../components/UploadZone';
+import Sidebar from '../components/Sidebar';
+import BottomNav from '../components/BottomNav';
+import { UploadCloud } from 'lucide-react';
 import logoUrl from '../assets/logo.svg';
 import {
   fetchConsumption, fetchAnomalies, fetchCost, fetchForecast, uploadData
@@ -35,7 +38,7 @@ function SectionCard({ id, title, icon: Icon, children, className = '', accentCo
   return (
     <div
       id={id}
-      className={`relative rounded-2xl bg-navy-800/50 backdrop-blur-md border border-slate-800/60 overflow-hidden shadow-xl shadow-black/20 hover:border-slate-700/60 hover:shadow-black/40 transition-all duration-300 ${className}`}
+      className={`relative rounded-xl bg-[#111827] backdrop-blur-sm border border-white/5 overflow-hidden shadow-xl shadow-black/20 hover:border-slate-600/60 transition-all duration-200 ${className}`}
     >
       {/* Gradient top edge */}
       <div className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r ${accent[accentColor]} to-transparent opacity-50`} />
@@ -151,100 +154,68 @@ export default function Dashboard() {
   const meterIcon = meterType === 'electricity' ? Zap : Droplets;
 
   return (
-    <div className="min-h-screen bg-navy-950 font-sans">
-      {/* Ambient background glow */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-cyan-500/5 blur-3xl" />
-        <div className="absolute top-1/3 -right-40 h-80 w-80 rounded-full bg-violet-500/5 blur-3xl" />
-        <div className="absolute bottom-20 left-1/3 h-64 w-64 rounded-full bg-emerald-500/4 blur-3xl" />
-      </div>
-
-      {/* Header */}
-      <header className="relative z-10 border-b border-slate-800/60 bg-navy-900/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center justify-center sm:justify-start gap-4">
-              <div className="flex items-center justify-center h-10 w-10 relative">
-                <div className="absolute inset-0 bg-cyan-400/20 blur-md rounded-full" />
-                <img src={logoUrl} alt="UtilityWatch" className="h-full w-full object-contain relative z-10 drop-shadow-md" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-white tracking-tight leading-tight">UtilityWatch</h1>
-                <p className="text-[10px] text-slate-400 tracking-widest uppercase font-medium">Smart Analyzer</p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 w-full sm:w-auto">
-              <div className="flex items-center gap-2 bg-navy-900/60 border border-slate-800/60 rounded-xl p-1">
-                <button
-                  onClick={() => setDataSource('demo')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ${
-                    dataSource === 'demo' ? 'bg-navy-700 text-slate-200' : 'text-slate-500 hover:text-slate-300'
-                  }`}
-                >
-                  Demo Data
-                </button>
-                <button
-                  onClick={() => setDataSource('user')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ${
-                    dataSource === 'user' ? 'bg-navy-700 text-slate-200' : 'text-slate-500 hover:text-slate-300'
-                  }`}
-                >
-                  My Data
-                </button>
-              </div>
-
-
-              <div className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 ml-2">
-                <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>Live</span>
-              </div>
-              <button
-                id="refresh-all-btn"
-                onClick={handleRefresh}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-400 border border-slate-700/50 rounded-lg hover:bg-slate-800/50 hover:text-slate-300 transition-all duration-200"
-              >
-                <RefreshCw className="h-3.5 w-3.5" />
-                Refresh
-              </button>
-            </div>
-          </div>
+    <div className="flex h-screen bg-[#0a0f1e] font-sans text-slate-200 overflow-hidden">
+      <Sidebar
+        meterType={meterType}
+        setMeterType={setMeterType}
+        dataSource={dataSource}
+        setDataSource={setDataSource}
+        onRefresh={handleRefresh}
+      />
+      
+      <div className="flex-1 flex flex-col min-h-0 relative md:ml-60 pb-16 md:pb-0 overflow-y-auto custom-scrollbar">
+        {/* Ambient background glow */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden mix-blend-screen opacity-50">
+          <div className="absolute -top-40 -left-40 h-96 w-96 rounded-full bg-cyan-500/5 blur-3xl" />
+          <div className="absolute top-1/3 -right-40 h-80 w-80 rounded-full bg-violet-500/5 blur-3xl" />
+          <div className="absolute bottom-20 left-1/3 h-64 w-64 rounded-full bg-emerald-500/4 blur-3xl" />
         </div>
-      </header>
 
-        {/* Main content */}
-        <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-          
-          {/* Meter toggle + summary + Rate Editor */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-slate-400 text-sm">
-                <span>Monitoring <span className="text-white font-semibold capitalize">{meterType}</span> consumption</span>
-                <span className="hidden sm:block w-px h-3.5 bg-slate-700"></span>
-                <span>{dataSource === 'demo' ? 'Last 12 months' : 'Custom Dataset'}</span>
-              </div>
-              {uploadError && <p className="text-red-400 text-xs mt-1">{uploadError}</p>}
-            </div>
-            
-            <div className="flex flex-wrap items-center gap-4 w-full sm:w-auto">
-              <div className="flex items-center gap-2 bg-navy-900/60 border border-slate-800/60 rounded-xl px-3 py-1.5 flex-1 sm:flex-none">
-                <span className="text-xs text-slate-400 font-medium">Rate: ₹</span>
+        {/* Slim Header Row */}
+        <header className="relative z-10 sticky top-0 bg-[#0a0f1e]/80 backdrop-blur-xl border-b border-slate-800/60 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3 text-slate-400 text-sm">
+            <span>Monitoring <span className="text-white font-semibold capitalize">{meterType}</span> consumption</span>
+            <span className="w-px h-3.5 bg-slate-700"></span>
+            <span>{dataSource === 'demo' ? 'Last 12 months' : 'Custom Dataset'}</span>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4">
+            {dataSource === 'user' && (
+              <div className="relative">
                 <input 
-                  type="number" 
-                  step="0.01"
-                  value={currentRate}
-                  onChange={(e) => {
-                    const val = parseFloat(e.target.value) || 0;
-                    if (meterType === 'electricity') setElecRate(val);
-                    else setWaterRate(val);
-                  }}
-                  className="bg-transparent border-b border-slate-700 w-16 text-xs text-white focus:outline-none focus:border-cyan-400 text-center"
+                  type="file" 
+                  accept=".csv" 
+                  onChange={handleFileUpload} 
+                  className="absolute inset-0 opacity-0 cursor-pointer" 
+                  disabled={isUploading}
                 />
-                <span className="text-xs text-slate-400 font-medium">/{unit}</span>
+                <button className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-cyan-400 border border-cyan-400/30 rounded-lg hover:bg-cyan-400/10 transition-all pointer-events-none">
+                  {isUploading ? <RefreshCw className="h-3.5 w-3.5 animate-spin" /> : <UploadCloud className="h-3.5 w-3.5" />}
+                  Upload CSV
+                </button>
               </div>
-              <MeterToggle value={meterType} onChange={setMeterType} />
+            )}
+            
+            <div className="flex items-center gap-2 bg-[#111827] border border-slate-800/60 rounded-xl px-3 py-1.5">
+              <span className="text-xs text-slate-400 font-medium">Rate: ₹</span>
+              <input 
+                type="number" 
+                step="0.01"
+                value={currentRate}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value) || 0;
+                  if (meterType === 'electricity') setElecRate(val);
+                  else setWaterRate(val);
+                }}
+                className="bg-transparent border-b border-slate-700 w-16 text-xs text-white focus:outline-none focus:border-cyan-400 text-center"
+              />
+              <span className="text-xs text-slate-400 font-medium">/{unit}</span>
             </div>
           </div>
+        </header>
+
+        <main className="relative z-10 p-4 sm:p-6 space-y-6">
+          {uploadError && <p className="text-red-400 text-xs mb-4">{uploadError}</p>}
 
           {dataSource === 'user' && (!consumptionData || !consumptionData.data || consumptionData.data.length === 0) && !cLoading ? (
             <UploadZone onUpload={handleFileUpload} isUploading={isUploading} />
@@ -350,6 +321,13 @@ export default function Dashboard() {
             <span>Powered by NVIDIA AI</span>
           </footer>
         </main>
+      </div>
+      <BottomNav
+        meterType={meterType}
+        setMeterType={setMeterType}
+        dataSource={dataSource}
+        setDataSource={setDataSource}
+      />
     </div>
   );
 }

@@ -53,15 +53,15 @@ export default function AnomalyPanel({ anomalyData, meterType }) {
           {anomalies.slice(0, 20).map((a, i) => (
             <div
               key={i}
-              className="flex items-center justify-between bg-navy-900/40 border border-slate-800/40 rounded-xl px-3 py-2.5 hover:bg-navy-900/70 transition-colors duration-200"
+              className="flex items-center justify-between border-b border-white/5 last:border-0 px-3 py-3 hover:bg-white/5 transition-colors duration-200"
             >
-              <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-3">
                 <AlertTriangle className="h-4 w-4 text-red-400 flex-shrink-0" />
                 <div>
                   <div className="flex items-center gap-2">
                     <Clock className="h-3 w-3 text-slate-500" />
-                    <span className="text-xs text-slate-300 font-medium">
-                      {format(parseISO(a.timestamp), 'MMM d, yyyy HH:mm')}
+                    <span className="text-xs text-slate-300 font-medium tracking-wide">
+                      {format(parseISO(a.timestamp), 'MMM d, h:mm a')}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
