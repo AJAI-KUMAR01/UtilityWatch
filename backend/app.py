@@ -25,10 +25,22 @@ from routes.ai_routes import ai_bp
 def create_app() -> Flask:
     flask_app = Flask(__name__)
 
-    # Allow cross-origin requests
-    allowed_origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
-    CORS(flask_app, resources={r"/api/*": {"origins": allowed_origins}})
+    from flask import request
 
+    # Allow cross-origin requests
+    # Clean up origins to prevent trailing slash mismatches (e.g. "https://domain.com/" -> "https://domain.com")
+    raw_origins = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173").split(",")
+    allowed_origins = [o.strip().rstrip("/") for o in raw_origins if o.strip()]
+    
+    CORS(flask_app, resources={r"/api/*": {"origins": allowed_origins}}, supports_credentials=True)
+
+    @flask_app.after_request
+    def log_cors_headers(response):
+        origin = request.headers.get("Origin")
+        acao = response.headers.get("Access-Control-Allow-Origin")
+        if origin:
+            print(f"[CORS DEBUG] Request Origin: {origin} | Allowed Origin Response: {acao}", flush=True)
+        return response
     # Register blueprints
     flask_app.register_blueprint(data_bp, url_prefix="/api")
     flask_app.register_blueprint(analytics_bp, url_prefix="/api/analytics")
