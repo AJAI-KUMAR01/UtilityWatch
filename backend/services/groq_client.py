@@ -1,8 +1,24 @@
 """
 Groq API Client
 ===============
-Calls the Groq API with llama-3.3-70b-versatile to generate
-plain-language energy-saving recommendations.
+Calls the Groq API to generate plain-language energy-saving recommendations.
+
+Model Selection (configurable via environment):
+------------------------------------------------
+Primary model:  GROQ_MODEL env var (default: llama-3.3-70b-versatile)
+Fallback model: GROQ_FALLBACK_MODEL env var (default: openai/gpt-oss-20b)
+
+If the primary model call fails with a model-not-found / access error, the
+client automatically retries with the fallback model and annotates the response
+with which model was actually used. No silent substitution — the caller always
+knows which model served the response.
+
+Why two models?
+  - llama-3.3-70b-versatile requires a paid/developer Groq tier.
+  - openai/gpt-oss-20b is available on the free tier and produces
+    comparable quality recommendations for this structured task.
+  - To upgrade: set GROQ_MODEL=llama-3.3-70b-versatile in backend/.env
+    and ensure your API key has access to that model at console.groq.com.
 
 NO RAG — the LLM receives only structured summary stats in the prompt.
 The prompt is deterministic and reproducible for a given input.
@@ -11,11 +27,29 @@ API key is loaded exclusively from the GROQ_API_KEY environment variable.
 It is NEVER hardcoded or logged.
 """
 
+import json
+import logging
 import os
-from groq import Groq
+import re
+
 from dotenv import load_dotenv
+from groq import Groq, APIStatusError
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
+
+# ---------------------------------------------------------------------------
+# Model configuration — both read from env, never hardcoded
+# ---------------------------------------------------------------------------
+PRIMARY_MODEL_DEFAULT = "llama-3.3-70b-versatile"
+FALLBACK_MODEL_DEFAULT = "openai/gpt-oss-20b"
+
+PRIMARY_MODEL = os.environ.get("GROQ_MODEL", PRIMARY_MODEL_DEFAULT)
+FALLBACK_MODEL = os.environ.get("GROQ_FALLBACK_MODEL", FALLBACK_MODEL_DEFAULT)
+
+# Error codes/messages that indicate a model is unavailable on this API key
+_MODEL_NOT_FOUND_CODES = {"model_not_found", "invalid_model", "model_access_denied"}
 
 _client = None
 
@@ -81,21 +115,13 @@ Format your response as a JSON object with this structure:
     return prompt
 
 
-def get_recommendations(summary: dict) -> dict:
+def _call_model(client: Groq, model: str, prompt: str) -> str:
     """
-    Send usage summary to Groq and return structured recommendations.
-
-    Args:
-        summary: Dict of usage statistics from analytics services
-
-    Returns:
-        dict with 'recommendations' list and 'summary' string
+    Make a single Groq chat completion call and return raw content string.
+    Raises APIStatusError (or other exceptions) on failure.
     """
-    client = _get_client()
-    prompt = build_prompt(summary)
-
     completion = client.chat.completions.create(
-        model="openai/gpt-oss-20b",
+        model=model,
         messages=[
             {
                 "role": "system",
@@ -107,34 +133,110 @@ def get_recommendations(summary: dict) -> dict:
             },
             {"role": "user", "content": prompt},
         ],
-        temperature=0.4,      # Slightly creative but mostly factual
+        temperature=0.4,
         max_tokens=1200,
         top_p=0.9,
     )
+    return completion.choices[0].message.content.strip()
 
-    raw_text = completion.choices[0].message.content.strip()
 
-    # Strip Qwen's chain-of-thought <think>...</think> block if present
-    import re as _re
-    raw_text = _re.sub(r"<think>.*?</think>", "", raw_text, flags=_re.DOTALL).strip()
+def _is_model_unavailable(exc: Exception) -> bool:
+    """
+    Return True if the exception signals that the requested model is not
+    available on this API key — so we should retry with the fallback model.
+    """
+    if not isinstance(exc, APIStatusError):
+        return False
+    status = exc.status_code
+    body = exc.body or {}
+    error_code = body.get("error", {}).get("code", "") if isinstance(body, dict) else ""
+    error_msg = str(exc).lower()
+    return (
+        status == 404
+        or error_code in _MODEL_NOT_FOUND_CODES
+        or "model_not_found" in error_msg
+        or "does not exist" in error_msg
+        or "do not have access" in error_msg
+    )
 
-    # Parse JSON response robustly
-    import json
-    import re
 
-    # Strip markdown code fences if present
+def _parse_response(raw_text: str) -> dict:
+    """
+    Robustly parse the LLM response into a structured dict.
+    Handles: markdown code fences, <think> blocks (Qwen reasoning models),
+    and JSON decode errors (graceful plain-text fallback).
+    """
+    # Strip chain-of-thought <think>...</think> blocks (e.g. from Qwen models)
+    raw_text = re.sub(r"<think>.*?</think>", "", raw_text, flags=re.DOTALL).strip()
+
+    # Strip markdown code fences
     raw_text = re.sub(r"^```(?:json)?\s*", "", raw_text, flags=re.MULTILINE)
     raw_text = re.sub(r"\s*```$", "", raw_text, flags=re.MULTILINE)
+    raw_text = raw_text.strip()
 
     try:
-        result = json.loads(raw_text)
+        return json.loads(raw_text)
     except json.JSONDecodeError:
-        # Graceful fallback — return raw text wrapped in expected structure
-        result = {
+        # Graceful fallback — return the raw text wrapped in expected structure
+        return {
             "recommendations": [
-                {"id": 1, "title": "AI Response", "detail": raw_text, "estimated_savings": "N/A"}
+                {
+                    "id": 1,
+                    "title": "AI Response",
+                    "detail": raw_text,
+                    "estimated_savings": "N/A",
+                }
             ],
             "summary": "Please review the recommendation above.",
         }
+
+
+def get_recommendations(summary: dict) -> dict:
+    """
+    Send usage summary to Groq and return structured recommendations.
+
+    Tries PRIMARY_MODEL first. If that model is unavailable on this API key
+    (404 / model_not_found), automatically retries with FALLBACK_MODEL.
+    The response is annotated with 'model_used' so callers know which model ran.
+
+    Args:
+        summary: Dict of usage statistics from analytics services
+
+    Returns:
+        dict with 'recommendations' list, 'summary' string, and 'model_used' str
+    """
+    client = _get_client()
+    prompt = build_prompt(summary)
+
+    # --- Attempt 1: primary model ---
+    model_used = PRIMARY_MODEL
+    try:
+        logger.info("Calling Groq with primary model: %s", PRIMARY_MODEL)
+        raw_text = _call_model(client, PRIMARY_MODEL, prompt)
+
+    except Exception as primary_exc:
+        if _is_model_unavailable(primary_exc):
+            # Primary model not accessible on this key — use documented fallback
+            logger.warning(
+                "Primary model '%s' not available (error: %s). "
+                "Retrying with fallback model '%s'. "
+                "To use the primary model, ensure your Groq API key has access at "
+                "console.groq.com and set GROQ_MODEL in backend/.env.",
+                PRIMARY_MODEL,
+                primary_exc,
+                FALLBACK_MODEL,
+            )
+            model_used = FALLBACK_MODEL
+            raw_text = _call_model(client, FALLBACK_MODEL, prompt)
+        else:
+            # Re-raise unexpected errors (auth failures, rate limits, etc.)
+            raise
+
+    result = _parse_response(raw_text)
+
+    # Annotate which model actually served the response
+    result["model_used"] = model_used
+    result["primary_model"] = PRIMARY_MODEL
+    result["fallback_used"] = model_used != PRIMARY_MODEL
 
     return result

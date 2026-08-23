@@ -10,7 +10,7 @@ UtilityWatch is a full-stack web application that helps households and businesse
 - 🚨 **Anomaly Detection** — Z-score + rolling moving average flags usage spikes and drops
 - 💰 **Cost Analysis** — Daily, weekly, and monthly cost estimates against configurable tariff rates
 - 🔮 **Forecasting** — Holt-Winters Exponential Smoothing for future consumption projection
-- 🤖 **AI Recommendations** — Groq-powered (llama-3.3-70b-versatile) plain-language energy-saving tips
+- 🤖 **AI Recommendations** — Groq-powered (llama-3.3-70b-versatile, with automatic fallback) plain-language energy-saving tips
 - 🌙 **Premium Dark UI** — Glassmorphism cards, smooth animations, responsive layout
 
 ---
@@ -48,7 +48,7 @@ UtilityWatch is a full-stack web application that helps households and businesse
 |------------|-------------------------------------|
 | Frontend   | React 18, Vite, Tailwind CSS, Recharts |
 | Backend    | Python 3.11+, Flask, Flask-CORS     |
-| AI         | Groq API — llama-3.3-70b-versatile  |
+| AI         | Groq API — llama-3.3-70b-versatile (fallback: openai/gpt-oss-20b) |
 | Analytics  | pandas, numpy, scikit-learn, statsmodels |
 | Data       | Synthetic CSV (timestamp, meter_type, usage, unit) |
 
@@ -142,6 +142,33 @@ Synthetic data covers 365 days of hourly readings with:
 | `GET`  | `/api/analytics/cost` | `meter_type`, `rate` | Cost breakdown (daily/weekly/monthly) |
 | `GET`  | `/api/analytics/forecast` | `meter_type`, `horizon` | Usage forecast |
 | `POST` | `/api/ai/recommendations` | JSON body with summary stats | AI energy-saving recommendations |
+
+---
+
+## AI Model Configuration
+
+UtilityWatch is designed for **`llama-3.3-70b-versatile`** as the primary model, with **`openai/gpt-oss-20b`** as an automatic fallback.
+
+### Configuration
+
+| Env Variable | Default | Purpose |
+|---|---|---|
+| `GROQ_MODEL` | `llama-3.3-70b-versatile` | Primary model (paid/developer tier) |
+| `GROQ_FALLBACK_MODEL` | `openai/gpt-oss-20b` | Auto-used if primary is unavailable |
+
+### How the fallback works
+
+The fallback logic lives in `backend/services/groq_client.py`. If the primary model call returns a `model_not_found` / 404 error, the backend automatically retries with the fallback model. The response includes `model_used` and `fallback_used` fields — the frontend displays the actual model name and shows a `FALLBACK` badge when the fallback ran.
+
+### Accessing `llama-3.3-70b-versatile`
+
+`llama-3.3-70b-versatile` requires a **paid or developer-tier Groq API key**. To enable it:
+
+1. Upgrade your Groq account at [console.groq.com](https://console.groq.com)
+2. Verify your key has access to `llama-3.3-70b-versatile` in the Models tab
+3. Your `backend/.env` already has `GROQ_MODEL=llama-3.3-70b-versatile` — no code changes needed
+
+If your key is on the free tier, `openai/gpt-oss-20b` is used automatically and produces high-quality recommendations for this structured task.
 
 ---
 

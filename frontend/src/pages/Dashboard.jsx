@@ -277,7 +277,7 @@ export default function Dashboard() {
 
         {/* Footer */}
         <footer className="text-center text-xs text-slate-600 pt-4 border-t border-slate-800/40">
-          <p>UtilityWatch · Powered by Groq openai/gpt-oss-20b · Flask + React</p>
+          <p>UtilityWatch · Groq AI (llama-3.3-70b-versatile / fallback: gpt-oss-20b) · Flask + React</p>
         </footer>
       </main>
     </div>

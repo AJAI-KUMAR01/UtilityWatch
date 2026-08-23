@@ -132,7 +132,7 @@ export default function AIRecommendations({ costData, anomalyData, forecastData,
         <div className="flex flex-col items-center py-10 gap-3 animate-fade-in">
           <Loader2 className="h-8 w-8 text-cyan-400 animate-spin" />
           <p className="text-sm text-slate-400">Analyzing your consumption data...</p>
-          <p className="text-xs text-slate-600">Powered by Groq · openai/gpt-oss-20b</p>
+          <p className="text-xs text-slate-600">Powered by Groq · llama-3.3-70b-versatile (with fallback)</p>
         </div>
       )}
 
@@ -156,7 +156,16 @@ export default function AIRecommendations({ costData, anomalyData, forecastData,
             <h3 className="text-sm font-semibold text-slate-200">
               {result.recommendations?.length || 0} Recommendations
             </h3>
-            <span className="text-[10px] text-slate-500 ml-auto">openai/gpt-oss-20b</span>
+            <div className="ml-auto flex items-center gap-1.5">
+              {result.fallback_used && (
+                <span className="text-[9px] font-semibold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-1.5 py-0.5 rounded-md">
+                  FALLBACK
+                </span>
+              )}
+              <span className="text-[10px] text-slate-500">
+                {result.model_used || 'groq'}
+              </span>
+            </div>
           </div>
 
           <div className="space-y-2 mb-4">
