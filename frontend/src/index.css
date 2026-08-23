@@ -25,28 +25,24 @@
   }
 
   body {
-    background-color: var(--navy-950);
-    color: #e2e8f0;
+    background-color: #0a0a0a;
+    color: #ffffff;
     font-family: 'Inter', system-ui, sans-serif;
     min-height: 100vh;
   }
 }
 
 @layer components {
-  /* Custom scrollbar for the anomaly list */
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #1e293b;
-    border-radius: 2px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #334155;
-  }
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #111; }
+  ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+  
+  .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: #111; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 3px; }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
 
   /* Recharts tooltip override */
   .recharts-tooltip-wrapper {

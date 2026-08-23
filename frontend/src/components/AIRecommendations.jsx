@@ -3,14 +3,22 @@ import { Sparkles, ChevronRight, Loader2, Lightbulb, Zap, Droplets } from 'lucid
 import { fetchRecommendations } from '../api/client';
 
 function RecommendationCard({ rec, index, meterType }) {
+  const borderColors = [
+    'border-l-[#7c3aed] hover:border-l-[#7c3aed]',
+    'border-l-[#2563eb] hover:border-l-[#2563eb]',
+    'border-l-[#0891b2] hover:border-l-[#0891b2]',
+    'border-l-[#d97706] hover:border-l-[#d97706]',
+    'border-l-[#22c55e] hover:border-l-[#22c55e]',
+    'border-l-[#ef4444] hover:border-l-[#ef4444]',
+  ];
   const dotColors = [
-    'bg-cyan-400', 'bg-violet-400', 'bg-emerald-400',
-    'bg-amber-400', 'bg-rose-400', 'bg-sky-400', 'bg-fuchsia-400',
+    'bg-[#7c3aed]', 'bg-[#2563eb]', 'bg-[#0891b2]',
+    'bg-[#d97706]', 'bg-[#22c55e]', 'bg-[#ef4444]',
   ];
 
   return (
     <div
-      className={`rounded-xl bg-[#111827] border border-white/5 border-l-4 border-l-cyan-400 p-4 transition-all duration-300 animate-slide-up hover:border-slate-600/60 hover:border-l-cyan-400`}
+      className={`rounded-xl bg-[#1a1a1a] border border-[#2a2a2a] border-l-4 p-4 transition-all duration-300 animate-slide-up hover:border-[#3a3a3a] ${borderColors[index % borderColors.length]}`}
       style={{ animationDelay: `${index * 60}ms` }}
       id={`recommendation-${index + 1}`}
     >
@@ -28,7 +36,7 @@ function RecommendationCard({ rec, index, meterType }) {
               {rec.title || `Recommendation ${index + 1}`}
             </p>
             {rec.estimated_savings && rec.estimated_savings !== 'N/A' && (
-              <span className="inline-block mt-1 text-[10px] font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-md px-1.5 py-0.5">
+              <span className="inline-block mt-1 text-[10px] font-bold text-[#111111] bg-[#22c55e] border border-[#22c55e] rounded-md px-1.5 py-0.5">
                 Save ~{rec.estimated_savings}
               </span>
             )}
@@ -37,7 +45,7 @@ function RecommendationCard({ rec, index, meterType }) {
       </div>
 
       <div className="mt-4 pl-11">
-        <p className="text-xs text-slate-400 leading-relaxed whitespace-pre-wrap">
+        <p className="text-xs text-[#888888] leading-relaxed whitespace-pre-wrap">
           {rec.detail}
         </p>
       </div>
@@ -117,8 +125,8 @@ export default function AIRecommendations({ costData, anomalyData, forecastData,
     <div className="animate-fade-in">
       {!result && !loading && (
         <div className="flex flex-col items-center py-8 gap-4">
-          <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-violet-500/20 border border-cyan-500/20">
-            <Sparkles className="h-8 w-8 text-cyan-400" />
+          <div className="flex items-center justify-center h-16 w-16 rounded-2xl bg-gradient-to-br from-[#7c3aed]/20 to-[#2563eb]/20 border border-[#7c3aed]/20">
+            <Sparkles className="h-8 w-8 text-[#7c3aed]" />
           </div>
           <div className="text-center">
             <p className="text-sm font-semibold text-slate-200 mb-1">AI-Powered Insights</p>
@@ -130,7 +138,7 @@ export default function AIRecommendations({ costData, anomalyData, forecastData,
             id="ai-recommendations-btn"
             onClick={handleFetch}
             disabled={!costData}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-400 hover:to-violet-400 text-white text-sm font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-cyan-500/20 hover:shadow-cyan-500/30 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-br from-[#7c3aed] to-[#2563eb] hover:from-[#a78bfa] hover:to-[#60a5fa] text-white text-sm font-semibold rounded-xl transition-all duration-300 shadow-lg shadow-[#7c3aed]/20 hover:shadow-[#7c3aed]/30 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
           >
             <Sparkles className="h-4 w-4" />
             Generate Recommendations

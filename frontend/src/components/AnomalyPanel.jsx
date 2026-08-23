@@ -3,9 +3,9 @@ import { format, parseISO } from 'date-fns';
 
 function AnomalyBadge({ method }) {
   const map = {
-    z_score: { label: 'Z-Score', color: 'text-red-400 bg-red-400/10 border-red-400/20' },
-    rolling: { label: 'Rolling Avg', color: 'text-amber-400 bg-amber-400/10 border-amber-400/20' },
-    both: { label: 'Both', color: 'text-rose-400 bg-rose-400/10 border-rose-400/20' },
+    z_score: { label: 'Z-Score', color: 'text-white bg-[#7c3aed] border-[#7c3aed]' },
+    rolling: { label: 'Rolling Avg', color: 'text-white bg-[#0891b2] border-[#0891b2]' },
+    both: { label: 'Both', color: 'text-white bg-[#f59e0b] border-[#f59e0b]' },
   };
   const { label, color } = map[method] || map.both;
   return (
@@ -28,12 +28,12 @@ export default function AnomalyPanel({ anomalyData, meterType }) {
       {/* Stats row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
         {[
-          { label: 'Flagged Points', value: anomalyData.flagged_count ?? 0, color: 'text-red-400' },
-          { label: 'Total Points', value: anomalyData.total_points ?? 0, color: 'text-slate-300' },
-          { label: 'Global Mean', value: `${thresholds.global_mean ?? 0} ${unit}`, color: 'text-cyan-400' },
+          { label: 'Flagged Points', value: anomalyData.flagged_count ?? 0, color: 'text-[#ef4444]' },
+          { label: 'Total Points', value: anomalyData.total_points ?? 0, color: 'text-white' },
+          { label: 'Global Mean', value: `${thresholds.global_mean ?? 0} ${unit}`, color: 'text-[#22d3ee]' },
         ].map((stat) => (
-          <div key={stat.label} className="bg-navy-900/60 rounded-xl p-3 border border-slate-800/50">
-            <p className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">{stat.label}</p>
+          <div key={stat.label} className="bg-[#111111] rounded-xl p-3 border border-[#2a2a2a]">
+            <p className="text-[10px] text-[#888888] uppercase tracking-wider mb-1">{stat.label}</p>
             <p className={`text-lg font-bold font-mono ${stat.color}`}>{stat.value}</p>
           </div>
         ))}
@@ -42,11 +42,11 @@ export default function AnomalyPanel({ anomalyData, meterType }) {
       {/* Anomaly list */}
       {anomalies.length === 0 ? (
         <div className="flex flex-col items-center py-8 gap-2">
-          <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
-            <Icon className="h-5 w-5 text-emerald-400" />
+          <div className="h-10 w-10 rounded-full bg-[#22c55e]/10 flex items-center justify-center">
+            <Icon className="h-5 w-5 text-[#22c55e]" />
           </div>
-          <p className="text-sm text-emerald-400 font-semibold">No anomalies detected</p>
-          <p className="text-xs text-slate-500">Usage patterns look normal</p>
+          <p className="text-sm text-[#22c55e] font-semibold">No anomalies detected</p>
+          <p className="text-xs text-[#888888]">Usage patterns look normal</p>
         </div>
       ) : (
         <div className="space-y-2 max-h-64 overflow-y-auto pr-1 custom-scrollbar">
@@ -56,20 +56,20 @@ export default function AnomalyPanel({ anomalyData, meterType }) {
               className="flex items-center justify-between border-b border-white/5 last:border-0 px-3 py-3 hover:bg-white/5 transition-colors duration-200"
             >
               <div className="flex items-center gap-3">
-                <AlertTriangle className="h-4 w-4 text-red-400 flex-shrink-0" />
+                <AlertTriangle className="h-4 w-4 text-[#ef4444] flex-shrink-0" />
                 <div>
                   <div className="flex items-center gap-2">
-                    <Clock className="h-3 w-3 text-slate-500" />
-                    <span className="text-xs text-slate-300 font-medium tracking-wide">
+                    <Clock className="h-3 w-3 text-[#555555]" />
+                    <span className="text-xs text-[#e2e8f0] font-medium tracking-wide">
                       {format(parseISO(a.timestamp), 'MMM d, h:mm a')}
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <TrendingUp className="h-3 w-3 text-red-400" />
-                    <span className="text-xs text-red-300 font-semibold font-mono">
+                    <TrendingUp className="h-3 w-3 text-[#ef4444]" />
+                    <span className="text-xs text-[#ef4444] font-semibold font-mono">
                       {a.usage} {unit}
                     </span>
-                    <span className="text-[10px] text-slate-500">
+                    <span className="text-[10px] text-[#555555]">
                       (z={a.z_score})
                     </span>
                   </div>

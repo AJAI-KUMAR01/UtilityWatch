@@ -38,7 +38,7 @@ function SectionCard({ id, title, icon: Icon, children, className = '', accentCo
   return (
     <div
       id={id}
-      className={`relative rounded-xl bg-[#111827] backdrop-blur-sm border border-white/5 overflow-hidden shadow-xl shadow-black/20 hover:border-slate-600/60 transition-all duration-200 ${className}`}
+      className={`relative rounded-xl bg-[#161616] backdrop-blur-sm border border-[#2a2a2a] overflow-hidden shadow-xl shadow-black/20 hover:border-[#3a3a3a] transition-all duration-200 ${className}`}
     >
       {/* Gradient top edge */}
       <div className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r ${accent[accentColor]} to-transparent opacity-50`} />
@@ -48,7 +48,7 @@ function SectionCard({ id, title, icon: Icon, children, className = '', accentCo
           <div className={`flex items-center justify-center h-8 w-8 rounded-lg ${iconColors[accentColor]}`}>
             <Icon className="h-4 w-4" />
           </div>
-          <h2 className="text-sm font-semibold text-slate-200 tracking-wide">{title}</h2>
+          <h2 className="text-sm font-semibold text-white tracking-wide">{title}</h2>
         </div>
         {children}
       </div>
@@ -172,10 +172,10 @@ export default function Dashboard() {
         </div>
 
         {/* Slim Header Row */}
-        <header className="relative z-10 sticky top-0 bg-[#0a0f1e]/80 backdrop-blur-xl border-b border-slate-800/60 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3 text-slate-400 text-sm">
+        <header className="relative z-10 sticky top-0 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-[#2a2a2a] px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3 text-[#888888] text-sm">
             <span>Monitoring <span className="text-white font-semibold capitalize">{meterType}</span> consumption</span>
-            <span className="w-px h-3.5 bg-slate-700"></span>
+            <span className="w-px h-3.5 bg-[#2a2a2a]"></span>
             <span>{dataSource === 'demo' ? 'Last 12 months' : 'Custom Dataset'}</span>
           </div>
 
@@ -196,8 +196,8 @@ export default function Dashboard() {
               </div>
             )}
             
-            <div className="flex items-center gap-2 bg-[#111827] border border-slate-800/60 rounded-xl px-3 py-1.5">
-              <span className="text-xs text-slate-400 font-medium">Rate: ₹</span>
+            <div className="flex items-center gap-2 bg-[#161616] border border-[#2a2a2a] rounded-xl px-3 py-1.5">
+              <span className="text-xs text-[#888888] font-medium">Rate: ₹</span>
               <input 
                 type="number" 
                 step="0.01"
@@ -207,9 +207,9 @@ export default function Dashboard() {
                   if (meterType === 'electricity') setElecRate(val);
                   else setWaterRate(val);
                 }}
-                className="bg-transparent border-b border-slate-700 w-16 text-xs text-white focus:outline-none focus:border-cyan-400 text-center"
+                className="bg-transparent border-b border-[#3a3a3a] w-16 text-xs text-white focus:outline-none focus:border-[#7c3aed] text-center"
               />
-              <span className="text-xs text-slate-400 font-medium">/{unit}</span>
+              <span className="text-xs text-[#888888] font-medium">/{unit}</span>
             </div>
           </div>
         </header>
@@ -315,9 +315,9 @@ export default function Dashboard() {
             </>
           )}
   
-          <footer className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 text-xs text-slate-600 pt-4 border-t border-slate-800/40 text-center">
+          <footer className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 text-xs text-[#3a3a3a] pt-4 border-t border-[#111111] text-center">
             <span>UtilityWatch</span>
-            <span className="hidden sm:block w-px h-3.5 bg-slate-700"></span>
+            <span className="hidden sm:block w-px h-3.5 bg-[#2a2a2a]"></span>
             <span>Powered by NVIDIA AI</span>
           </footer>
         </main>

@@ -2,25 +2,25 @@ import { IndianRupee, Calendar, TrendingUp, TrendingDown } from 'lucide-react';
 
 function StatCard({ id, icon: Icon, label, value, subValue, accent = 'cyan', trend }) {
   const accentMap = {
+    purple: {
+      border: 'border-[#2a2a2a] border-l-[4px] border-l-[#7c3aed] hover:border-[#3a3a3a] hover:border-l-[#7c3aed]',
+      icon: 'bg-[#7c3aed] text-white',
+      value: 'text-[#a78bfa]',
+    },
+    blue: {
+      border: 'border-[#2a2a2a] border-l-[4px] border-l-[#2563eb] hover:border-[#3a3a3a] hover:border-l-[#2563eb]',
+      icon: 'bg-[#2563eb] text-white',
+      value: 'text-[#60a5fa]',
+    },
     cyan: {
-      border: 'border-cyan-500/20',
-      icon: 'bg-cyan-500/10 text-cyan-400',
-      value: 'text-cyan-400',
+      border: 'border-[#2a2a2a] border-l-[4px] border-l-[#0891b2] hover:border-[#3a3a3a] hover:border-l-[#0891b2]',
+      icon: 'bg-[#0891b2] text-white',
+      value: 'text-[#22d3ee]',
     },
-    violet: {
-      border: 'border-violet-500/20',
-      icon: 'bg-violet-500/10 text-violet-400',
-      value: 'text-violet-400',
-    },
-    emerald: {
-      border: 'border-emerald-500/20',
-      icon: 'bg-emerald-500/10 text-emerald-400',
-      value: 'text-emerald-400',
-    },
-    amber: {
-      border: 'border-amber-500/20',
-      icon: 'bg-amber-500/10 text-amber-400',
-      value: 'text-amber-400',
+    orange: {
+      border: 'border-[#2a2a2a] border-l-[4px] border-l-[#d97706] hover:border-[#3a3a3a] hover:border-l-[#d97706]',
+      icon: 'bg-[#d97706] text-white',
+      value: 'text-[#fbbf24]',
     },
   };
   const colors = accentMap[accent] || accentMap.cyan;
@@ -28,7 +28,7 @@ function StatCard({ id, icon: Icon, label, value, subValue, accent = 'cyan', tre
   return (
     <div
       id={id}
-      className={`relative overflow-hidden rounded-xl bg-[#111827] backdrop-blur-sm border border-white/5 p-5 flex flex-col gap-3 hover:border-slate-600/60 transition-all duration-200 group animate-slide-up`}
+      className={`relative overflow-hidden rounded-xl bg-[#161616] backdrop-blur-sm border p-5 flex flex-col gap-3 transition-all duration-200 group animate-slide-up ${colors.border}`}
     >
       {/* Background glow */}
       <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
@@ -38,10 +38,10 @@ function StatCard({ id, icon: Icon, label, value, subValue, accent = 'cyan', tre
       </div>
 
       <div>
-        <p className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">{label}</p>
+        <p className="text-xs text-[#888888] font-medium uppercase tracking-wider mb-1">{label}</p>
         <p className={`text-2xl font-bold ${colors.value} font-mono`}>{value}</p>
         {subValue && (
-          <p className="text-xs text-slate-500 mt-1">{subValue}</p>
+          <p className="text-xs text-[#4a4a4a] mt-1">{subValue}</p>
         )}
       </div>
 
@@ -78,7 +78,7 @@ export default function CostCards({ costData, meterType }) {
         label="Avg Daily Cost"
         value={fmtCost(summary.avg_daily_cost)}
         subValue={`Rate: ₹${costData.rate_per_unit}/${unit}`}
-        accent="cyan"
+        accent="purple"
       />
       <StatCard
         id="cost-card-weekly"
@@ -86,7 +86,7 @@ export default function CostCards({ costData, meterType }) {
         label="Avg Weekly Cost"
         value={fmtCost(summary.avg_weekly_cost)}
         subValue={`${(summary.avg_weekly_cost / summary.avg_daily_cost).toFixed(0)} days avg`}
-        accent="violet"
+        accent="blue"
       />
       <StatCard
         id="cost-card-monthly"
@@ -94,7 +94,7 @@ export default function CostCards({ costData, meterType }) {
         label="Avg Monthly Cost"
         value={fmtCost(summary.avg_monthly_cost)}
         subValue="Per calendar month"
-        accent="emerald"
+        accent="cyan"
       />
       <StatCard
         id="cost-card-total"
@@ -102,7 +102,7 @@ export default function CostCards({ costData, meterType }) {
         label="Total Cost (Year)"
         value={fmtCost(summary.total_cost)}
         subValue={`${fmtUsage(summary.total_usage)} consumed`}
-        accent="amber"
+        accent="orange"
       />
     </div>
   );

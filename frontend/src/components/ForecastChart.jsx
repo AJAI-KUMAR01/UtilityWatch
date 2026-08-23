@@ -15,8 +15,8 @@ import { format, parseISO } from 'date-fns';
 const CustomTooltip = ({ active, payload, label, unit }) => {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-navy-800 border border-slate-700/50 rounded-xl p-3 shadow-xl text-xs">
-      <p className="text-slate-400 mb-1 font-medium">
+    <div className="bg-[#1e1e1e] border border-[#333333] rounded-xl p-3 shadow-xl text-xs text-white">
+      <p className="text-[#888888] mb-1 font-medium">
         {label ? format(parseISO(label), 'MMM d, yyyy') : label}
       </p>
       {payload.map((p) => (
@@ -70,24 +70,24 @@ export default function ForecastChart({ historical, forecast, meterType }) {
               <stop offset="95%" stopColor="#a78bfa" stopOpacity={0.02} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
           <XAxis
             dataKey="date"
             tickFormatter={formatXAxis}
-            tick={{ fill: '#64748b', fontSize: 11 }}
-            axisLine={{ stroke: '#1e293b' }}
+            tick={{ fill: '#555555', fontSize: 11 }}
+            axisLine={{ stroke: 'rgba(255,255,255,0.04)' }}
             tickLine={false}
             interval="preserveStartEnd"
           />
           <YAxis
-            tick={{ fill: '#64748b', fontSize: 11 }}
+            tick={{ fill: '#555555', fontSize: 11 }}
             axisLine={false}
             tickLine={false}
             width={50}
             tickFormatter={(v) => v.toFixed(0)}
           />
           <Tooltip content={<CustomTooltip unit={unit} />} />
-          <Legend wrapperStyle={{ paddingTop: '12px', fontSize: '12px', color: '#94a3b8' }} />
+          <Legend wrapperStyle={{ paddingTop: '12px', fontSize: '12px', color: '#555555' }} />
 
           {/* Reference line at forecast start */}
           {forecastStartDate && (
@@ -118,10 +118,10 @@ export default function ForecastChart({ historical, forecast, meterType }) {
             type="monotone"
             dataKey="historical"
             name="Historical"
-            stroke="#06b6d4"
+            stroke="#2563eb"
             strokeWidth={2}
             dot={false}
-            activeDot={{ r: 4, fill: '#06b6d4' }}
+            activeDot={{ r: 4, fill: '#2563eb' }}
             connectNulls
           />
         </ComposedChart>
