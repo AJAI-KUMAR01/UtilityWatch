@@ -165,7 +165,7 @@ Format your response exactly as a JSON object with this structure:
         messages.append({"role": "user", "content": prompt_content})
         messages[0] = {"role": "system", "content": "You are a highly knowledgeable energy efficiency consultant. Always respond in valid JSON format when requested."}
         
-        recs_json_str = _call_model(messages)
+        recs_json_str = _call_model(messages, disable_thinking=True)
         
         try:
             result = _parse_json(recs_json_str)
