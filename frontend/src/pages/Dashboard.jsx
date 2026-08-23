@@ -10,6 +10,7 @@ import AnomalyPanel from '../components/AnomalyPanel';
 import AIRecommendations from '../components/AIRecommendations';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
+import UploadZone from '../components/UploadZone';
 import logoUrl from '../assets/logo.svg';
 import {
   fetchConsumption, fetchAnomalies, fetchCost, fetchForecast, uploadData
@@ -259,16 +260,7 @@ export default function Dashboard() {
           </div>
 
           {dataSource === 'user' && (!consumptionData || !consumptionData.data || consumptionData.data.length === 0) && !cLoading ? (
-            <div className="flex flex-col items-center justify-center py-20 px-4 text-center bg-navy-900/40 rounded-3xl border border-slate-800/60 shadow-xl">
-              <div className="h-20 w-20 bg-slate-800/50 rounded-full flex items-center justify-center mb-6">
-                <Activity className="h-10 w-10 text-slate-500" />
-              </div>
-              <h3 className="text-xl font-semibold text-slate-200 mb-2">No data uploaded yet</h3>
-              <p className="text-sm text-slate-400 max-w-sm mb-6">
-                Click "Upload CSV" above to get started. Ensure your CSV has columns: <br/>
-                <code className="text-cyan-400 bg-cyan-400/10 px-1.5 py-0.5 rounded text-xs mt-2 inline-block">timestamp, meter_type, usage, unit</code>
-              </p>
-            </div>
+            <UploadZone onUpload={handleFileUpload} isUploading={isUploading} />
           ) : (
             <>
               {/* Cost Cards */}
