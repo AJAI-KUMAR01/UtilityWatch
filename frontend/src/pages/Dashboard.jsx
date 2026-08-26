@@ -110,6 +110,10 @@ export default function Dashboard() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
   const [lastRefresh, setLastRefresh] = useState(new Date());
+
+  useEffect(() => {
+    setUploadError(null);
+  }, [dataSource, meterType]);
   
   // Custom Rates (INR)
   const [elecRate, setElecRate] = useState(8.00);

@@ -117,7 +117,7 @@ def get_consumption():
         "count": len(result),
     })
 
-@data_bp.route("/user-upload", methods=["POST"])
+@data_bp.route("/data/user-upload", methods=["POST"])
 def user_upload():
     """POST /api/data/user-upload - Upload custom CSV or JSON data."""
     global _df_cache_user
